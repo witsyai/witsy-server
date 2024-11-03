@@ -1,5 +1,5 @@
 
-import { anyDict, Plugin, PluginParameter } from 'multi-llm-ts';
+import { Plugin, PluginParameter } from 'multi-llm-ts';
 import { convert } from 'html-to-text';
 
 export default class extends Plugin {
@@ -31,7 +31,7 @@ export default class extends Plugin {
     ];
   }
 
-  async execute(parameters: anyDict): Promise<anyDict> {
+  async execute(parameters: any): Promise<any> {
 
     try {
       const html = await fetch(parameters.url).then(response => response.text());

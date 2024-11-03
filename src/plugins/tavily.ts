@@ -1,5 +1,5 @@
 
-import { Plugin, PluginParameter, anyDict } from 'multi-llm-ts';
+import { Plugin, PluginParameter } from 'multi-llm-ts';
 import { tavily } from '@tavily/core';
 
 export default class extends Plugin {
@@ -31,7 +31,7 @@ export default class extends Plugin {
     ]
   }
 
-  async execute(parameters: anyDict): Promise<anyDict> {
+  async execute(parameters: any): Promise<any> {
     try {
       const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY })
       const response = await tvly.search(parameters.query, {

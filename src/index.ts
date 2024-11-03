@@ -1,9 +1,10 @@
 import express from 'express';
 import portfinder from 'portfinder';
 import path from 'path';
+import threadRouter from './thread/router';
 import llmRouter from './llm/router';
 import dotenv from 'dotenv';
-import Database from './database';
+import Database from './utils/database';
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/images', express.static(path.join(__dirname, '..', 'data', 'images')));
 
+app.use('/thread', threadRouter);
 app.use('/llm', llmRouter);
 
 app.get('/', (req, res) => {

@@ -1,37 +1,18 @@
+
 import { Router, Request, Response, NextFunction } from 'express';
 import { igniteEngine, Message, loadModels } from 'multi-llm-ts';
+import { apiKeyMiddleware } from '../utils/middlewares';
 import BrowsePlugin from '../plugins/browse';
 import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
 import PythonPlugin from '../plugins/python';
-import Thread from '../model/thread';
+import Thread from '../thread';
 
 interface LlmRequest extends Request {
   llmOpts?: {
     apiKey: string
-    models: {
-      chat: any[]
-      images: any[]
-    },
-    model: {
-      chat: string,
-      images: string
-    }
   };
 }
-
-const router = Router();
-const threads: Thread[] = [];
-
-// middleware to check for API_KEY header
-const apiKeyMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const apiKey = req.header('API_KEY');
-  if (!apiKey) {
-    res.status(401).json({ error: 'API_KEY header is required' });
-  } else {
-    next();
-  }
-};
 
 // middleware to add llm options to the request
 const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
@@ -40,11 +21,7 @@ const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): 
     const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
     const apiKey = process.env[apiKeyEnvVar];
     if (apiKey) {
-      req.llmOpts = {
-        apiKey,
-        model: { chat: '', images: '' },
-        models: { chat: [], images: [] },
-      };
+      req.llmOpts = { apiKey, };
     } else {
       res.status(400).json({ error: `API key for engine ${engineId} not found` });
       return;
@@ -53,27 +30,9 @@ const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): 
   next();
 };
 
+const router = Router();
 router.use(apiKeyMiddleware);
 router.use(llmOptsMiddleware);
-
-// to create a new thread
-router.put('/thread', async (req: Request, res: Response) => {
-  const thread = new Thread();
-  threads.push(thread);
-  await thread.save();
-  res.json({ id: thread.id });
-});
-
-// to get the messages of a thread
-router.get('/thread/:id', async (req: Request, res: Response) => {
-  const threadId = req.params.id;
-  const thread = await Thread.load(threadId);
-  if (!thread) {
-    res.status(404).json({ error: `Conversation ${threadId} not found` });
-    return;
-  }
-  res.json(thread.messages);
-});
 
 // to get the models of an engine
 router.get('/models/:engine', async (req: LlmRequest, res: Response) => {
@@ -83,23 +42,40 @@ router.get('/models/:engine', async (req: LlmRequest, res: Response) => {
     res.status(400).json({ error: `Engine ${engineId} not found` });
     return;
   }
-  await loadModels(engineId, opts);
-  res.json(opts.models);
+  const models = await loadModels(engineId, opts);
+  res.json(models);
 });
 
 // to chat in the thread
 router.post('/chat', async (req: LlmRequest, res: Response) => {
-  const { message, thread: threadId, engine: engineId, model: modelId } = req.body;
-  if (!message || !threadId || !engineId || !modelId) {
-    res.status(400).json({ error: 'message/thread/engine/model required' });
+  
+  // load params
+  const { prompt, engine: engineId, model: modelId } = req.body;
+  if (!prompt || !engineId || !modelId) {
+    res.status(400).json({ error: 'prompt/engine/model required' });
+    return;
+  }
+
+  // load thread or messages
+  const { thread: threadId, messages } = req.body;
+  if (!threadId && (!messages || !Array.isArray(messages))) {
+    res.status(400).json({ error: 'thread or messages required' });
     return;
   }
 
   // load the conversation
-  const thread = await Thread.load(threadId);
-  if (!thread) {
-    res.status(404).json({ error: `Conversation ${threadId} not found` });
-    return;
+  let thread = null
+  if (threadId) {
+    thread = await Thread.load(threadId);
+    if (!thread) {
+      res.status(404).json({ error: `Conversation ${threadId} not found` });
+      return;
+    }
+  }
+
+  // make sure messages are ok
+  if (messages && messages.length === 0) {
+    messages.push(new Message('system', Thread.instructions));
   }
 
   // get and check the opts
@@ -122,17 +98,28 @@ router.post('/chat', async (req: LlmRequest, res: Response) => {
   }
 
   // add the new message to the thread
-  const userMessage = new Message('user', message);
-  thread.addMessage(userMessage);
-  await thread.save();
+  const userMessage = new Message('user', prompt);
+  messages?.push(userMessage);
+  thread?.addMessage(userMessage);
+  await thread?.save();
+
+  // the response
+  const response = new Message('assistant');
 
   // generate response from the engine
-  const stream = engine.generate(thread.messages, { model: modelId });
+  const stream = engine.generate(modelId, thread ? thread.messages : messages);
   for await (const message of stream) {
     if (message.type === 'content') {
+      response.appendText(message);
       res.write(message.text);
     }
   }
+
+  // add to the thread
+  thread?.addMessage(response);
+  await thread?.save();
+
+  // done
   res.end();
 });
 

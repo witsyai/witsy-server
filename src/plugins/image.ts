@@ -1,7 +1,7 @@
 
-import { anyDict, Plugin, PluginParameter } from 'multi-llm-ts';
+import { Plugin, PluginParameter } from 'multi-llm-ts';
 import { HfInference } from '@huggingface/inference'
-import { saveFile, saveFile64 } from '../data';
+import { saveFile, saveFile64 } from '../utils/data';
 import OpenAI from 'openai'
 
 export default class extends Plugin {
@@ -124,7 +124,7 @@ export default class extends Plugin {
   
   }
 
-  async execute(parameters: anyDict): Promise<anyDict> {
+  async execute(parameters: any): Promise<any> {
     try {
       if (this.engine == 'openai') {
         return this.openai(parameters)
@@ -139,7 +139,7 @@ export default class extends Plugin {
     }
   }
 
-  async openai(parameters: anyDict): Promise<anyDict> {
+  async openai(parameters: any): Promise<any> {
 
     // init
     const client = new OpenAI({
@@ -171,7 +171,7 @@ export default class extends Plugin {
 
   }  
 
-  async huggingface(parameters: anyDict): Promise<anyDict> {
+  async huggingface(parameters: any): Promise<any> {
 
     // init
     const client = new HfInference(process.env.HUGGINGFACE_API_KEY)
