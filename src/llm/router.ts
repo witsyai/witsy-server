@@ -1,17 +1,15 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { igniteEngine, Message, loadModels } from 'multi-llm-ts';
+import { Message, loadModels } from 'multi-llm-ts';
 import { apiKeyMiddleware } from '../utils/middlewares';
-import BrowsePlugin from '../plugins/browse';
-import TavilyPlugin from '../plugins/tavily';
-import ImagePlugin from '../plugins/image';
-import PythonPlugin from '../plugins/python';
+import Controller, { LlmOpts } from './controller';
 import Thread from '../thread';
 
 interface LlmRequest extends Request {
-  llmOpts?: {
-    apiKey: string
-  };
+  llmOpts?: LlmOpts
+  engineId?: string
+  modelId?: string
+  messages?: Message[]
 }
 
 // middleware to add llm options to the request
@@ -26,6 +24,32 @@ const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): 
       res.status(400).json({ error: `API key for engine ${engineId} not found` });
       return;
     }
+  }
+  next();
+};
+
+// middleware to add engine/model options to the request
+const engineModelMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
+  const engineId = req.params.engine || req.body.engine;
+  const modelId = req.params.model || req.body.model;
+  if (engineId && modelId) {
+    req.engineId = engineId;
+    req.modelId = modelId;
+  } else {
+    res.status(400).json({ error: `engine and model required` });
+    return;
+  }
+  next();
+};
+
+// middleware to add messages to the request
+const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
+  const messages = req.body.messages;
+  if (messages && Array.isArray(messages)) {
+    req.messages = messages;
+  } else {
+    res.status(400).json({ error: `messages array required` });
+    return;
   }
   next();
 };
@@ -47,18 +71,18 @@ router.get('/models/:engine', async (req: LlmRequest, res: Response) => {
 });
 
 // to chat in the thread
-router.post('/chat', async (req: LlmRequest, res: Response) => {
+router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Response) => {
   
   // load params
-  const { prompt, engine: engineId, model: modelId } = req.body;
-  if (!prompt || !engineId || !modelId) {
-    res.status(400).json({ error: 'prompt/engine/model required' });
+  const { prompt } = req.body;
+  if (!prompt) {
+    res.status(400).json({ error: 'prompt required' });
     return;
   }
 
   // load thread or messages
-  const { thread: threadId, messages } = req.body;
-  if (!threadId && (!messages || !Array.isArray(messages))) {
+  const { thread: threadId, messages: userMessages } = req.body;
+  if (!threadId && (!userMessages || !Array.isArray(userMessages))) {
     res.status(400).json({ error: 'thread or messages required' });
     return;
   }
@@ -73,54 +97,40 @@ router.post('/chat', async (req: LlmRequest, res: Response) => {
     }
   }
 
-  // make sure messages are ok
-  if (messages && messages.length === 0) {
-    messages.push(new Message('system', Thread.instructions));
-  }
-
-  // get and check the opts
-  const opts = req.llmOpts;
-  if (!opts) {
-    res.status(400).json({ error: `API key for engine ${engineId} not found` });
-    return;
-  }
-
-  // ignite and add plugins
-  const engine = igniteEngine(engineId, opts);
-  engine.addPlugin(new BrowsePlugin());
-  engine.addPlugin(new TavilyPlugin());
-  engine.addPlugin(new PythonPlugin());
-
-  // image plugin
-  if (process.env.IMAGE_ENGINE && process.env.IMAGE_MODEL) {
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    engine.addPlugin(new ImagePlugin(baseUrl, process.env.IMAGE_ENGINE, process.env.IMAGE_MODEL));
-  }
-
-  // add the new message to the thread
-  const userMessage = new Message('user', prompt);
-  messages?.push(userMessage);
-  thread?.addMessage(userMessage);
-  await thread?.save();
+  // add headers
+  res.setHeader('Content-Type', 'application/json');
 
   // the response
   const response = new Message('assistant');
 
-  // generate response from the engine
-  const stream = engine.generate(modelId, thread ? thread.messages : messages);
+  // now prompt
+  const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, {
+    llmOpts: req.llmOpts!,
+    baseUrl: `${req.protocol}://${req.get('host')}`
+  })
   for await (const message of stream) {
+    res.write(JSON.stringify(message));
     if (message.type === 'content') {
       response.appendText(message);
-      res.write(message.text);
     }
   }
 
-  // add to the thread
-  thread?.addMessage(response);
-  await thread?.save();
+  // update the thread
+  if (thread) {
+    thread.addMessage(new Message('user', prompt));
+    thread.addMessage(response);
+    await thread.save();
+  }
 
   // done
   res.end();
+
+});
+
+// to chat in the thread
+router.post('/title', engineModelMiddleware, engineMessagesMiddleware, async (req: LlmRequest, res: Response) => {
+  const title = await Controller.title(req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
+  res.send(JSON.stringify({ title: title }));
 });
 
 export default router;

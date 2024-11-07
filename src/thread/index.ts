@@ -1,5 +1,5 @@
 
-import { Message } from "multi-llm-ts";
+import { Message } from 'multi-llm-ts';
 import Database from '../utils/database';
 
 export default class Thread {
@@ -7,13 +7,9 @@ export default class Thread {
   private _uuid: string;
   private _messages: Message[];
 
-  static instructions: string = 'You are a helpful assistant.';
-
-  constructor(uuid?: string, instructions?: string) {
+  constructor(uuid?: string) {
     this._uuid = uuid || crypto.randomUUID();
-    this._messages = [
-      new Message('system', instructions || Thread.instructions),
-    ];
+    this._messages = []
   }
 
   public get id(): string {
