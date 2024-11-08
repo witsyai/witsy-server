@@ -1,5 +1,5 @@
 
-import { igniteEngine, LlmChunk, Message } from 'multi-llm-ts';
+import { igniteEngine, LlmChunk, loadModels, Message, ModelsList } from 'multi-llm-ts';
 import BrowsePlugin from '../plugins/browse';
 import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
@@ -24,9 +24,44 @@ const instructions = (): string => {
   return instr;
 }
 
+export type LlmEngine = {
+  id: string
+  name: string
+}
+
+const engines = [
+  { id: 'openai', name: 'OpenAI' },
+  { id: 'anthropic', name: 'Anthropic' },
+  { id: 'mistralai', name: 'MistralAI' },
+  { id: 'google', name: 'Google' },
+  { id: 'xai', name: 'xAI' },
+  { id: 'groq', name: 'Groq' },
+  { id: 'cerebras', name: 'Cerebras' },
+]
+
 export default {
 
   instructions: instructions,
+
+  engines: (): LlmEngine[] => {
+
+    const result: LlmEngine[] = [];
+    for (const engine of engines) {
+      const apiKeyEnvVar = `${engine.id.toUpperCase()}_API_KEY`;
+      const apiKey = process.env[apiKeyEnvVar];
+      if (apiKey) {
+        result.push(engine);
+      }
+    }
+
+    return result;
+
+  },
+
+  models: async (engineId: string, llmOpts: LlmOpts): Promise<ModelsList> => {
+    const models = await loadModels(engineId, llmOpts);
+    return models || { chat: [], };
+  },
 
   chat: async function*(engineId: string, modelId: string, userMessages: Message[], prompt: string, chatOpts: ChatOpts): AsyncIterable<LlmChunk> {
 
@@ -63,7 +98,7 @@ export default {
 
   title: async (engineId: string, modelId: string, userMessages: Message[], llmOpts: LlmOpts): Promise<string> => {
 
-    // else build the messages
+    // build the messages
     const messages: Message[] = []
     if (userMessages) {
       messages.push(new Message('system', _titling_instructions))
@@ -71,14 +106,14 @@ export default {
     }
 
     // ignite and add plugins
-    const engine = igniteEngine(engineId, {});
+    const engine = igniteEngine(engineId, llmOpts);
 
     // add the new message to the thread
     const userMessage = new Message('user', _titling_prompt);
     messages.push(userMessage);
 
     // generate response from the engine
-    console.log(messages);
+    //console.log(messages);
     const completion = await engine.complete(modelId, messages);
     return completion.content;
 

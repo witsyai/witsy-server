@@ -58,16 +58,15 @@ const router = Router();
 router.use(apiKeyMiddleware);
 router.use(llmOptsMiddleware);
 
+// to get the engines
+router.get('/engines', (req: LlmRequest, res: Response) => {
+  res.json(Controller.engines());
+});
+
 // to get the models of an engine
-router.get('/models/:engine', async (req: LlmRequest, res: Response) => {
+router.get('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: Response) => {
   const engineId = req.params.engine;
-  const opts = req.llmOpts;
-  if (!opts) {
-    res.status(400).json({ error: `Engine ${engineId} not found` });
-    return;
-  }
-  const models = await loadModels(engineId, opts);
-  res.json(models);
+  res.json(await Controller.models(engineId, req.llmOpts!));
 });
 
 // to chat in the thread
