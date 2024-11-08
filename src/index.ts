@@ -27,7 +27,7 @@ const startServer = async () => {
     console.log('Database initialized');
 
     // Find an available port and start the server
-    const port = await portfinder.getPortPromise({ port: 3000 });
+    const port = await portfinder.getPortPromise({ port: process.env.PORT ? parseInt(process.env.PORT) : 3000 });
     app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
     });
