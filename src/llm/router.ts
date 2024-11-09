@@ -97,21 +97,38 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
   }
 
   // add headers
-  res.setHeader('Content-Type', 'application/json');
+	res.writeHead(200, {
+		'Content-Type': 'application/json',
+		'Transfer-Encoding': 'chunked'
+	});
 
   // the response
   const response = new Message('assistant');
 
+	// f*ing nginx
+	const delay = (ms: number) => {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
   // now prompt
+	let lastSent = null;
+	const minDelayMs = 5;
   const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, {
     llmOpts: req.llmOpts!,
     baseUrl: `${req.protocol}://${req.get('host')}`
   })
   for await (const message of stream) {
+		if (lastSent != null) {
+			const elapsed = Date.now() - lastSent;
+			if (elapsed < minDelayMs) {
+				await delay(minDelayMs-elapsed);
+			}
+		}
     res.write(JSON.stringify(message));
     if (message.type === 'content') {
       response.appendText(message);
     }
+		lastSent = Date.now();
   }
 
   // update the thread
