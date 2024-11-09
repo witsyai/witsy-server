@@ -1,10 +1,10 @@
 
 import { Router, Request, Response } from 'express';
-import { apiKeyMiddleware } from '../utils/middlewares';
+import { clientIdMiddleware } from '../utils/middlewares';
 import Thread from '../thread';
 
 const router = Router();
-router.use(apiKeyMiddleware);
+router.use(clientIdMiddleware);
 
 // to create a new thread
 router.put('/', async (req: Request, res: Response) => {

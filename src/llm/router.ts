@@ -1,8 +1,8 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Message, loadModels } from 'multi-llm-ts';
-import { apiKeyMiddleware } from '../utils/middlewares';
+import { clientIdMiddleware } from '../utils/middlewares';
 import Controller, { LlmOpts } from './controller';
+import { Message } from 'multi-llm-ts';
 import Thread from '../thread';
 
 interface LlmRequest extends Request {
@@ -55,7 +55,7 @@ const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunc
 };
 
 const router = Router();
-router.use(apiKeyMiddleware);
+router.use(clientIdMiddleware);
 router.use(llmOptsMiddleware);
 
 // to get the engines
