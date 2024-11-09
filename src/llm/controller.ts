@@ -1,5 +1,5 @@
 
-import { igniteEngine, LlmChunk, loadModels, Message, ModelsList } from 'multi-llm-ts';
+import { Attachment, igniteEngine, LlmChunk, loadModels, Message, ModelsList } from 'multi-llm-ts';
 import BrowsePlugin from '../plugins/browse';
 import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
@@ -63,7 +63,7 @@ export default {
     return models || { chat: [], };
   },
 
-  chat: async function*(engineId: string, modelId: string, userMessages: Message[], prompt: string, chatOpts: ChatOpts): AsyncIterable<LlmChunk> {
+  chat: async function*(engineId: string, modelId: string, userMessages: Message[], prompt: string, attachment: Attachment|null, chatOpts: ChatOpts): AsyncIterable<LlmChunk> {
 
     // else build the messages
     const messages: Message[] = [
@@ -84,6 +84,9 @@ export default {
 
     // add the new message to the thread
     const userMessage = new Message('user', prompt);
+    if (attachment) {
+      userMessage.attach(attachment);
+    }
     messages.push(userMessage);
 
     // generate response from the engine

@@ -2,7 +2,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { clientIdMiddleware } from '../utils/middlewares';
 import Controller, { LlmOpts } from './controller';
-import { Message } from 'multi-llm-ts';
+import { Attachment, Message } from 'multi-llm-ts';
 import Thread from '../thread';
 
 interface LlmRequest extends Request {
@@ -73,10 +73,20 @@ router.get('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: Re
 router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Response) => {
   
   // load params
-  const { prompt } = req.body;
+  const { prompt, attachment: attachInfo } = req.body;
   if (!prompt) {
     res.status(400).json({ error: 'prompt required' });
     return;
+  }
+
+  // check attachInfo
+  let attachment: Attachment|null = null;
+  if (attachInfo) {
+     if (attachInfo.mimeType == null || attachInfo.contents == null) {
+      res.status(400).json({ error: 'attachment.mimeType and attachment.contents required' });
+      return;
+    }
+    attachment = new Attachment(attachInfo.contents, attachInfo.mimeType);
   }
 
   // load thread or messages
@@ -113,7 +123,7 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
   // now prompt
 	let lastSent = null;
 	const minDelayMs = 5;
-  const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, {
+  const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, attachment, {
     llmOpts: req.llmOpts!,
     baseUrl: `${req.protocol}://${req.get('host')}`
   })

@@ -9,7 +9,7 @@ import Database from './utils/database';
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '32mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/images', express.static(path.join(__dirname, '..', 'data', 'images')));
 
