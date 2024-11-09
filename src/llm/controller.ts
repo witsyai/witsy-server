@@ -6,7 +6,8 @@ import ImagePlugin from '../plugins/image';
 import PythonPlugin from '../plugins/python';
 
 export interface LlmOpts {
-  apiKey: string
+  apiKey?: string
+  baseURL?: string
 }
 
 export interface ChatOpts {
@@ -45,7 +46,10 @@ export default {
 
   engines: (): LlmEngine[] => {
 
+    // init
     const result: LlmEngine[] = [];
+
+    // these engines require an api key
     for (const engine of engines) {
       const apiKeyEnvVar = `${engine.id.toUpperCase()}_API_KEY`;
       const apiKey = process.env[apiKeyEnvVar];
@@ -54,6 +58,12 @@ export default {
       }
     }
 
+    // ollama is special
+    if (process.env.OLLAMA_ENABLED) {
+      result.push({ id: 'ollama', name: 'Ollama' });
+    }
+
+    // done
     return result;
 
   },

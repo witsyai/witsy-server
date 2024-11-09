@@ -15,7 +15,9 @@ interface LlmRequest extends Request {
 // middleware to add llm options to the request
 const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
   const engineId = req.params.engine || req.body.engine;
-  if (engineId) {
+  if (engineId === 'ollama') {
+    req.llmOpts = { baseURL: '' }
+  } else if (engineId) {
     const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
     const apiKey = process.env[apiKeyEnvVar];
     if (apiKey) {

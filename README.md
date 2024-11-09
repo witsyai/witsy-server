@@ -10,6 +10,8 @@ You need to provide API keys for every provider you want to support. To do so, c
 
 It is also recommended to define a custom value for `AUTHORIZED_CLIENT_ID` to that your server cannot be accessed by anyone.
 
+If you want to enable Ollama (locally), just add `OLLAMA_ENABLED=true` to the `.env` file.
+
 ## Execution
 
 `npm install` followed by `npm run dev` should be enough to start the server. You can try to access your server with the following `curl` command (make sure to replace `your-client-id` if needed):
