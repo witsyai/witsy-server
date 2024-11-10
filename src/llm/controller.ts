@@ -78,7 +78,10 @@ export default {
     // else build the messages
     const messages: Message[] = [
       new Message('system', instructions()),
-      ...userMessages.map((m: any) => new Message(m.role, m.content))
+      ...userMessages.map((m: any) => 
+          m.attachment == null || !m.attachment.contents?.length ?
+            new Message(m.role, m.content) :
+            new Message(m.role, m.content, new Attachment(m.attachment.contents, m.attachment.mimeType)))
     ];
 
     // ignite and add plugins
