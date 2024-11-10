@@ -5,13 +5,23 @@ import threadRouter from './thread/router';
 import llmRouter from './llm/router';
 import dotenv from 'dotenv';
 import Database from './utils/database';
+import { logger } from 'multi-llm-ts';
 
 dotenv.config();
+
+logger.set((...args: any[]) => {
+  console.log('  - ', ...args);
+});
 
 const app = express();
 app.use(express.json({ limit: '32mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/images', express.static(path.join(__dirname, '..', 'data', 'images')));
+
+app.use((req, res, next) => {
+  console.log(`${req.method.padEnd(4)} ${req.path}`);
+  next();
+});
 
 app.use('/thread', threadRouter);
 app.use('/llm', llmRouter);
