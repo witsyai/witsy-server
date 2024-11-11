@@ -1,6 +1,7 @@
 import express from 'express';
 import portfinder from 'portfinder';
 import path from 'path';
+import authRouter from './auth/router';
 import threadRouter from './thread/router';
 import llmRouter from './llm/router';
 import dotenv from 'dotenv';
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/auth', authRouter);
 app.use('/thread', threadRouter);
 app.use('/llm', llmRouter);
 
