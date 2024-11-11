@@ -6,11 +6,19 @@ import { Attachment, Message } from 'multi-llm-ts';
 import Thread from '../thread';
 
 interface LlmRequest extends Request {
+  hasClientId?: boolean
   llmOpts?: LlmOpts
   engineId?: string
   modelId?: string
   messages?: Message[]
 }
+
+// middleware to check if the client id is present
+const hasClientIdMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
+  const header = req.header('x-clientid');
+  req.hasClientId = (header != null && header.length > 0);
+  next();
+};
 
 // middleware to add llm options to the request
 const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
@@ -18,13 +26,23 @@ const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): 
   if (engineId === 'ollama') {
     req.llmOpts = { baseURL: '' }
   } else if (engineId) {
-    const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
-    const apiKey = process.env[apiKeyEnvVar];
-    if (apiKey) {
-      req.llmOpts = { apiKey, };
+    if (req.hasClientId) {
+      const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
+      const apiKey = process.env[apiKeyEnvVar];
+      if (apiKey) {
+        req.llmOpts = { apiKey, };
+      } else {
+        res.status(400).json({ error: `API key for engine ${engineId} not found` });
+        return;
+      }
     } else {
-      res.status(400).json({ error: `API key for engine ${engineId} not found` });
-      return;
+      const apiKey = req.body[`${engineId}Key`];
+      if (apiKey) {
+        req.llmOpts = { apiKey, };
+      } else {
+        res.status(400).json({ error: `API key for engine ${engineId} not found` });
+        return;
+      }
     }
   }
   next();
@@ -58,17 +76,18 @@ const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunc
 
 const router = Router();
 router.use(clientIdMiddleware);
+router.use(hasClientIdMiddleware);
 router.use(llmOptsMiddleware);
 
 // to get the engines
-router.get('/engines', (req: LlmRequest, res: Response) => {
-  res.json(Controller.engines());
+router.post('/engines', (req: LlmRequest, res: Response) => {
+  res.json({ engines: Controller.engines(req.hasClientId!, req.body) });
 });
 
 // to get the models of an engine
-router.get('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: Response) => {
+router.post('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: Response) => {
   const engineId = req.params.engine;
-  res.json(await Controller.models(engineId, req.llmOpts!));
+  res.json({ models: await Controller.models(engineId, req.llmOpts!) });
 });
 
 // to chat in the thread
@@ -158,7 +177,7 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
 // to chat in the thread
 router.post('/title', engineModelMiddleware, engineMessagesMiddleware, async (req: LlmRequest, res: Response) => {
   const title = await Controller.title(req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
-  res.send(JSON.stringify({ title: title }));
+  res.json({ title: title });
 });
 
 export default router;

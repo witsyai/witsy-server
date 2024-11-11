@@ -40,26 +40,35 @@ const engines = [
   { id: 'cerebras', name: 'Cerebras' },
 ]
 
+export type ApiKeyDict = { [key: string]: string }
+
 export default {
 
   instructions: instructions,
 
-  engines: (): LlmEngine[] => {
+  engines: (hasClientId: boolean, apiKeys: ApiKeyDict): LlmEngine[] => {
 
     // init
     const result: LlmEngine[] = [];
 
     // these engines require an api key
     for (const engine of engines) {
-      const apiKeyEnvVar = `${engine.id.toUpperCase()}_API_KEY`;
-      const apiKey = process.env[apiKeyEnvVar];
-      if (apiKey) {
-        result.push(engine);
+      if (hasClientId) {
+        const apiKeyEnvVar = `${engine.id.toUpperCase()}_API_KEY`;
+        const apiKey = process.env[apiKeyEnvVar];
+        if (apiKey) {
+          result.push(engine);
+        }
+      } else {
+        const apiKey = apiKeys[`${engine.id}Key`];
+        if (apiKey) {
+          result.push(engine);
+        }
       }
     }
 
     // ollama is special
-    if (process.env.OLLAMA_ENABLED) {
+    if (hasClientId && process.env.OLLAMA_ENABLED) {
       result.push({ id: 'ollama', name: 'Ollama' });
     }
 
