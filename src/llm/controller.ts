@@ -113,7 +113,7 @@ export default {
 
     // generate response from the engine
     //console.log(messages);
-    const stream = engine.generate(modelId, messages);
+    const stream = engine.generate(modelId, messages, { usage: true });
     for await (const message of stream) {
       yield message;
     }
@@ -139,7 +139,7 @@ export default {
 
     // generate response from the engine
     //console.log(messages);
-    const completion = await engine.complete(modelId, messages);
+    const completion = await engine.complete(modelId, messages, { usage: true });
     return completion.content;
 
   }

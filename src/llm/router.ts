@@ -159,6 +159,15 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
     if (message.type === 'content') {
       response.appendText(message);
     }
+    if (message.type === 'usage') {
+      let input = `${message.usage.prompt_tokens}`;
+      const output = `${message.usage.completion_tokens}`;
+      if (message.usage.prompt_tokens_details?.cached_tokens) {
+        const cached = message.usage.prompt_tokens_details.cached_tokens;
+        input = `${input} (${cached} cached)`;
+      }
+      console.log(`  - Usage: input tokens = ${input}, output tokens = ${output}`);
+    }
 		lastSent = Date.now();
   }
 
