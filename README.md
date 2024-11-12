@@ -6,22 +6,35 @@ It is based on [multi-llm-ts](https://github.com/nbonamy/multi-llm-ts) and there
 
 ## Setup
 
+LLM Server needs API keys to access the different LLM providers. There are two ways to do this:
+- Define the keys on the server, available to everyone who accesses the server
+- Let each user specify their own API keys
+
+### Server configuration
+
 You need to provide API keys for every provider you want to support. To do so, copy the `.env.sample` file as `.env` and enter your API keys. Delete the lines you do not have API keys for.
 
 It is also recommended to define a custom value for `AUTHORIZED_CLIENT_ID` to that your server cannot be accessed by anyone.
 
 If you want to enable Ollama (locally), just add `OLLAMA_ENABLED=true` to the `.env` file.
 
+### Per-user configuration
+
+You can skip the whole process above and let the user provides its own API keys. In that case, callers should provide their API keys in the HTTP POST request body in the `{providerKey}` e.g. `openaiKey`, `anthropicKey`... For the `llm/engines` endpoint, the client should provide all its API keys. For the other calls, only the API key for the provider requested is needed.
+
 ## Execution
 
 `npm install` followed by `npm run dev` should be enough to start the server. You can try to access your server with the following `curl` command (make sure to replace `your-client-id` if needed):
 
 ```sh
-curl --location 'http://localhost:3000/llm/engines' \
---header 'X-ClientId: your-client-id'
+curl -X POST -H 'X-ClientId: your-client-id' http://localhost:3000/llm/engines
 ```
 
+If you use per-user configuration, the same call would be:
 
+```sh
+curl -X POST -H 'Content-Type: application/json' -d '{"openaiKey":"your-openai-api-key"}' http://localhost:3000/llm/engines
+```
 
 ## Endpoints
 
