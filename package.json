@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p ./tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1",
     "pm2": "npm run build && pm2 start ecosystem.config.json --env production ; pm2 save"
   },
@@ -24,7 +24,9 @@
     "openai": "^4.70.2",
     "portfinder": "^1.0.32",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "youtube-transcript": "^1.2.1",
+    "ytv": "^1.0.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

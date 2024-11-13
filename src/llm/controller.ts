@@ -4,6 +4,7 @@ import BrowsePlugin from '../plugins/browse';
 import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
 import PythonPlugin from '../plugins/python';
+import YouTubePlugin from '../plugins/youtube';
 
 export interface LlmOpts {
   apiKey?: string
@@ -98,6 +99,7 @@ export default {
     engine.addPlugin(new BrowsePlugin());
     engine.addPlugin(new TavilyPlugin());
     engine.addPlugin(new PythonPlugin());
+    engine.addPlugin(new YouTubePlugin())
 
     // image plugin
     if (process.env.IMAGE_ENGINE && process.env.IMAGE_MODEL) {
