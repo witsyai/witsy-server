@@ -3,23 +3,23 @@ import { Request, Response, NextFunction } from 'express';
 import Database from './database';
 
 export interface AuthedRequest extends Request {
-  clientId?: string
+  accessCode?: string
   db?: Database
 }
 
 // middleware to check for API_KEY header
-export const clientIdMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
+export const accessCodeMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
   
   // fisrt check if we have a client id
-  const clientId = req.header('x-clientid');
-  if (clientId) {
-    let valid = (clientId == process.env.AUTHORIZED_CLIENT_ID);
+  const accessCode = req.header('x-access-code') || req.header('x-clientid');
+  if (accessCode) {
+    let valid = (accessCode == process.env.SUPERUSER_ACCESS_CODE || accessCode == process.env.AUTHORIZED_CLIENT_ID);
     if (!valid) {
       const db = await Database.getInstance();
-      valid = await db.isValidAccessCode(clientId);
+      valid = await db.isValidAccessCode(accessCode);
     }
     if (valid) {
-      req.clientId = clientId;
+      req.accessCode = accessCode;
       next();
       return;
     }
@@ -39,7 +39,7 @@ export const clientIdMiddleware = async (req: AuthedRequest, res: Response, next
   } 
 
   // too bad
-  res.status(401).json({ error: 'X-ClientId header is missing or invalid and no custom API keys provided' });
+  res.status(401).json({ error: 'X-Access-Code header is missing or invalid and no custom API keys provided' });
 };
 
 export const databaseMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {

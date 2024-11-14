@@ -1,16 +1,16 @@
 
 import { Router, Response } from 'express';
-import { clientIdMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
+import { accessCodeMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
 import { getUserByAccessCode } from '../user/controller';
 import { createThread, loadThread, saveThread } from './controller';
 
 const router = Router();
 router.use(databaseMiddleware);
-router.use(clientIdMiddleware);
+router.use(accessCodeMiddleware);
 
 // to create a new thread
 router.put('/', async (req: AuthedRequest, res: Response) => {
-  const user = await getUserByAccessCode(req.db!, req.clientId!);
+  const user = await getUserByAccessCode(req.db!, req.accessCode!);
   const thread = createThread(user!.id);
   await saveThread(req.db!, thread);
   res.json({ id: thread.id });

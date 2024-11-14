@@ -8,10 +8,10 @@ router.use(databaseMiddleware);
 
 // to create a new thread
 router.post('/verify', async (req: AuthedRequest, res: Response) => {
-  const clientId = req.body.clientId;
-  const isValid = await req.db!.isValidAccessCode(clientId);
+  const accessCode = req.body.accessCode || req.body.clientId;
+  const isValid = await req.db!.isValidAccessCode(accessCode);
   if (!isValid) {
-    res.status(401).json({ error: 'Invalid client Id' });
+    res.status(401).json({ error: 'Invalid accessCode' });
   } else {
     res.sendStatus(200);
   }
@@ -27,8 +27,12 @@ router.post('/login', async (req: AuthedRequest, res: Response) => {
     return;
   }
 
-  // return the client id
-  res.json({ clientId: user.accessCode });
+  // return the access code
+  res.json({
+    accessCode: user.accessCode,
+    // temp backwards compatibility
+    clientId: user.accessCode
+  });
 
 });
 

@@ -1,6 +1,6 @@
 
 import { Router, Response, NextFunction } from 'express';
-import { clientIdMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
+import { accessCodeMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
 import Controller, { LlmOpts } from './controller';
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment, Message } from 'multi-llm-ts';
@@ -20,7 +20,7 @@ const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): 
   if (engineId === 'ollama') {
     req.llmOpts = { baseURL: '' }
   } else if (engineId) {
-    if (req.clientId != null) {
+    if (req.accessCode != null) {
       const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
       const apiKey = process.env[apiKeyEnvVar];
       if (apiKey) {
@@ -69,13 +69,13 @@ const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunc
 };
 
 const router = Router();
-router.use(clientIdMiddleware);
+router.use(accessCodeMiddleware);
 router.use(databaseMiddleware);
 router.use(llmOptsMiddleware);
 
 // to get the engines
 router.post('/engines', (req: LlmRequest, res: Response) => {
-  res.json({ engines: Controller.engines(req.clientId != null, req.body) });
+  res.json({ engines: Controller.engines(req.accessCode != null, req.body) });
 });
 
 // to get the models of an engine
@@ -161,8 +161,8 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
         llmMessage.appendText(message);
       }
       if (message.type === 'usage') {
-        if (req.clientId != null) {
-          saveUserQuery(req.db!, req.clientId, threadId || 'unknown',
+        if (req.accessCode != null) {
+          saveUserQuery(req.db!, req.accessCode, threadId || 'unknown',
             req.engineId!, req.modelId!,
             [
               ...(thread ? thread.messages : userMessages),
