@@ -28,6 +28,50 @@ const instructions = (): string => {
   return instr;
 }
 
+const messagesPayload = (
+  configuration: Configuration,
+  systemPrompt: string,
+  thread: Message[],
+  prompthasAttachment: boolean,
+  includeAttachments: boolean
+): Message[] => {
+
+  // init with new prompt
+  let messages: Message[] = [];
+
+  // conversation length
+  let messagesCount = 0;
+  let attachmentCount = prompthasAttachment ? 1 : 0;
+  const chatConversationLength = configuration.chatConversationLength;
+  const chatMaxAttachments = configuration.chatMaxAttachments;
+  for (let i=thread.length-1; i>=0; i--) {
+
+    // prep all
+    const message = thread[i];
+    const attach = includeAttachments && attachmentCount < chatMaxAttachments && message.attachment != null && message.attachment.contents?.length;
+    const attachment = attach ? new Attachment(message.attachment.contents, message.attachment.mimeType) : undefined;
+    const payload = new Message(message.role, message.content, attachment);
+    messages.push(payload);
+
+    // count
+    attachmentCount += attach ? 1 : 0;
+    if (++messagesCount >= chatConversationLength * 2) {
+      break;
+    }
+  }
+
+  // add system prompt
+  messages.push(new Message('system', systemPrompt));
+
+  // done
+  return messages.reverse();
+}
+
+export const _private = {
+  instructions,
+  messagesPayload
+}
+
 export type LlmEngine = {
   id: string
   name: string
@@ -104,14 +148,8 @@ export default {
     chatOpts: ChatOpts): AsyncIterable<LlmChunk>
   {
 
-    // else build the messages
-    const messages: Message[] = [
-      new Message('system', instructions()),
-      ...userMessages.map((m: any) => 
-          m.attachment == null || !m.attachment.contents?.length ?
-            new Message(m.role, m.content) :
-            new Message(m.role, m.content, new Attachment(m.attachment.contents, m.attachment.mimeType)))
-    ];
+    // build the messages
+    const messages = messagesPayload(configuration, instructions(), userMessages, attachment != null, true);
 
     // ignite and add plugins
     const engine = igniteEngine(engineId, chatOpts.llmOpts);
@@ -143,14 +181,10 @@ export default {
   },
 
 
-  title: async (engineId: string, modelId: string, userMessages: Message[], llmOpts: LlmOpts): Promise<string> => {
+  title: async (configuration: Configuration, engineId: string, modelId: string, userMessages: Message[], llmOpts: LlmOpts): Promise<string> => {
 
     // build the messages
-    const messages: Message[] = []
-    if (userMessages) {
-      messages.push(new Message('system', _titling_instructions))
-      messages.push(...userMessages.map((m: any) => new Message(m.role, m.content)));
-    }
+    const messages: Message[] = messagesPayload(configuration, _titling_instructions, userMessages, false, false);
 
     // ignite and add plugins
     const engine = igniteEngine(engineId, llmOpts);

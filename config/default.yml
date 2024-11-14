@@ -31,6 +31,12 @@ models:
     - engine: groq
       model: llama-3.2-90b-text-preview
 
+chat:
+  conversation:
+    length: 5
+  attachments:
+    limit: 1
+
 image:
   engine: huggingface
   model: black-forest-labs/FLUX.1-schnell

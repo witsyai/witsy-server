@@ -148,7 +148,7 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
       thread.addMessage(llmMessage);
       if (thread.title.length === 0) {
         try {
-          thread.title = await Controller.title(req.engineId!, req.modelId!, thread.messages, req.llmOpts!);
+          thread.title = await Controller.title(req.configuration!, req.engineId!, req.modelId!, thread.messages, req.llmOpts!);
         } catch (e) {
           logger.warn('Error while titling thread', e);
         }
@@ -169,7 +169,7 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
 // to chat in the thread
 router.post('/title', engineModelMiddleware, engineMessagesMiddleware, async (req: LlmRequest, res: Response) => {
   try {
-    const title = await Controller.title(req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
+    const title = await Controller.title(req.configuration!, req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
     res.json({ title: title });
   } catch (e) {
     logger.error('Error in title', e);

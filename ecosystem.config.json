@@ -5,7 +5,8 @@
 			"script": "node ./dist/index.js",
 			"env": {
 				"PORT": 3000,
-				"NODE_PATH": "./src"
+				"NODE_PATH": "./src",
+				"NODE_ENV": "development"
 			},
 			"env_production": {
 				"PORT": 3005,

@@ -25,6 +25,14 @@ interface ConfiguratioData {
     basic: [ EngineModel ]
     pro: [ EngineModel ]
   }
+  chat?: {
+    conversation: {
+      length: number
+    }
+    attachments: {
+      limit: number
+    }
+  }
   image?: {
     model?: EngineModel
   }
@@ -115,6 +123,14 @@ export default class Configuration {
 
   get imageModel(): EngineModel|undefined {
     return this.data.image?.model;
+  }
+
+  get chatConversationLength(): number {
+    return this.data.chat?.conversation.length || 5;
+  }
+
+  get chatMaxAttachments(): number {
+    return this.data.chat?.attachments.limit || 5;
   }
 
 }
