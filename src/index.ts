@@ -25,9 +25,7 @@ app.use(express.json({ limit: '32mb' }));
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms', {
   stream: { write: (message: string) => logger.http(message.trim()), }
 }))
-llmLogger.set((...args: any[]) => {
-  logger.info(`  - ${args.join(' ')}`);
-});
+llmLogger.set(logger.debug);
 
 // security
 if (process.env.NODE_ENV === 'production') {
@@ -58,7 +56,7 @@ const startServer = async () => {
   try {
     // initialize the database
     await Database.getInstance();
-    logger.debug('Database initialized');
+    logger.info('Database initialized');
 
     // Find an available port and start the server
     const port = await portfinder.getPortPromise({ port: process.env.PORT ? parseInt(process.env.PORT) : 3000 });
