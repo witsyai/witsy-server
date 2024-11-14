@@ -24,6 +24,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-bearer-token": "^3.0.0",
     "fs-extra": "^11.2.0",
     "helmet": "^8.0.0",
     "html-to-text": "^9.0.5",

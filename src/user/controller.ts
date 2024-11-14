@@ -34,8 +34,8 @@ export const getUserByEmail = async (db: Database, email: string): Promise<User 
   return userData ? User.fromDatabaseRow(userData) : null;
 }
 
-export const getUserByAccessCode = async (db: Database, accessCode: string): Promise<User | null> => {
-  const userData = await db.getDb()?.get('SELECT * FROM users WHERE access_code = ?', [accessCode]);
+export const getUserByToken = async (db: Database, userToken: string): Promise<User | null> => {
+  const userData = await db.getDb()?.get('SELECT * FROM users WHERE user_token = ?', [userToken]);
   return userData ? User.fromDatabaseRow(userData) : null;
 }
 
@@ -46,11 +46,11 @@ const saveUser = async (db: Database, user: User): Promise<void> => {
 
     const result = await db.getDb()?.run(
       `INSERT INTO users (
-        username, email, access_code, created_at, last_login_at,
+        username, email, user_token, created_at, last_login_at,
         subscription_tier, subscription_expires_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
-        user.username, user.email, user.accessCode, user.createdAt, user.lastLoginAt,
+        user.username, user.email, user.userToken, user.createdAt, user.lastLoginAt,
         user.subscriptionTier, user.subscriptionExpiresAt
       ]
     );
@@ -69,7 +69,7 @@ const saveUser = async (db: Database, user: User): Promise<void> => {
       SET
         username = ?,
         email = ?,
-        access_code = ?,
+        user_token = ?,
         created_at = ?,
         last_login_at = ?,
         subscription_tier = ?,
@@ -78,7 +78,7 @@ const saveUser = async (db: Database, user: User): Promise<void> => {
       WHERE
         id = ?`,
       [
-        user.username, user.email, user.accessCode, user.createdAt, user.lastLoginAt,
+        user.username, user.email, user.userToken, user.createdAt, user.lastLoginAt,
         user.subscriptionTier, user.subscriptionExpiresAt, user.creditsLeft, user.id
       ]
     );

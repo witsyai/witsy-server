@@ -31,8 +31,8 @@ class Database {
     return this.db;
   }
 
-  public async isValidAccessCode(code: string) {
-    const result = await this.db?.get('SELECT COUNT(*) AS count FROM users WHERE access_code = ?', [code]);
+  public async isValidUserToken(code: string) {
+    const result = await this.db?.get('SELECT COUNT(*) AS count FROM users WHERE user_token = ?', [code]);
     return result.count === 1;
   }
 

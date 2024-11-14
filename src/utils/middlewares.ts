@@ -2,7 +2,8 @@
 import { Request, Response, NextFunction } from 'express';
 import Database from './database';
 import Configuration from './config';
-import { getUserByAccessCode } from '../user/controller';
+import { getUserByToken } from '../user/controller';
+import { timingSafeEqual } from 'crypto';
 import User from '../user';
 
 const configuration = new Configuration();
@@ -11,7 +12,7 @@ export type Role = 'admin' | 'superuser' | 'user';
 
 export interface AuthedRequest extends Request {
   configuration?: Configuration
-  accessCode?: string
+  userToken?: string
   role?: Role
   user?: User
   db?: Database
@@ -22,18 +23,22 @@ export const configurationMiddleware = (req: AuthedRequest, res: Response, next:
   next();
 };
 
-// middleware to check for X-Access-Code header
-export const accessCodeMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
+const compare = (token1: string|undefined, token2: string|undefined): boolean => {
+  if (!token1 || !token2) return false;
+  return timingSafeEqual(Buffer.from(token1), Buffer.from(token2));
+}
+
+// middleware to check for X-User-Token header
+export const userTokenMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
   
   // fisrt check if we have a client id
-  const accessCode = req.header('x-access-code') || req.header('x-clientid');
-  if (accessCode) {
-    let valid = (accessCode == process.env.SUPERUSER_ACCESS_CODE || accessCode == process.env.AUTHORIZED_CLIENT_ID);
+  if (req.userToken) {
+    let valid = (compare(req.userToken, process.env.SUPERUSER_TOKEN) || compare(req.userToken, process.env.AUTHORIZED_CLIENT_ID));
     if (valid) {
       req.role = 'superuser';
     } else {
       const db = await Database.getInstance();
-      const user = await getUserByAccessCode(db, accessCode);
+      const user = await getUserByToken(db, req.userToken);
       if (user != null) {
         valid = true;
         req.role = 'user';
@@ -41,7 +46,6 @@ export const accessCodeMiddleware = async (req: AuthedRequest, res: Response, ne
       }
     }
     if (valid) {
-      req.accessCode = accessCode;
       next();
       return;
     }
@@ -61,16 +65,14 @@ export const accessCodeMiddleware = async (req: AuthedRequest, res: Response, ne
   } 
 
   // too bad
-  res.status(401).json({ error: 'X-Access-Code header is missing or invalid and no custom API keys provided' });
+  res.status(401).json({ error: 'X-User-Token header is missing or invalid and no custom API keys provided' });
 };
 
-// middleware to check for X-Access-Code header
+// middleware to check for X-User-Token header
 export const adminMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
   
-  // fisrt check if we have a client id
-  const accessCode = req.header('x-access-code');
-  if (accessCode === process.env.ADMIN_ACCESS_CODE) {
-    req.accessCode = accessCode;
+  // fisrt check user token from auth bearer
+  if (compare(req.userToken, process.env.ADMIN_TOKEN)) {
     req.role = 'admin';
     next();
     return;

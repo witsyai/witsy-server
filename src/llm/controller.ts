@@ -93,14 +93,14 @@ export default {
 
   instructions: instructions,
 
-  engines: (hasAccessCode: boolean, apiKeys: ApiKeyDict): LlmEngine[] => {
+  engines: (hasUserToken: boolean, apiKeys: ApiKeyDict): LlmEngine[] => {
 
     // init
     const result: LlmEngine[] = [];
 
     // these engines require an api key
     for (const engine of engines) {
-      if (hasAccessCode) {
+      if (hasUserToken) {
         const apiKeyEnvVar = `${engine.id.toUpperCase()}_API_KEY`;
         const apiKey = process.env[apiKeyEnvVar];
         if (apiKey) {
@@ -115,7 +115,7 @@ export default {
     }
 
     // ollama is special
-    if (hasAccessCode && process.env.OLLAMA_ENABLED) {
+    if (hasUserToken && process.env.OLLAMA_ENABLED) {
       result.push({ id: 'ollama', name: 'Ollama' });
     }
 

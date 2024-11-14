@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
-import { accessCodeMiddleware } from '../utils/middlewares';
+import { userTokenMiddleware } from '../utils/middlewares';
 import { Readable } from 'stream';
 
 const router = Router();
 
 // to create a new thread
-router.post('/tts', accessCodeMiddleware, async (req: Request, res: Response) => {
+router.post('/tts', userTokenMiddleware, async (req: Request, res: Response) => {
 
   // auth is done so we have one of them
   // prioritize the one provided in the body (user)

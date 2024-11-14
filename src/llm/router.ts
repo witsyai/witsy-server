@@ -1,6 +1,6 @@
 
 import { Router, Response } from 'express';
-import { accessCodeMiddleware, databaseMiddleware } from '../utils/middlewares';
+import { userTokenMiddleware, databaseMiddleware } from '../utils/middlewares';
 import { engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment, Message } from 'multi-llm-ts';
@@ -9,7 +9,7 @@ import Controller from './controller';
 import logger from '../utils/logger';
 
 const router = Router();
-router.use(accessCodeMiddleware);
+router.use(userTokenMiddleware);
 router.use(databaseMiddleware);
 router.use(llmOptsMiddleware);
 
@@ -29,7 +29,7 @@ router.post('/models', (req: LlmRequest, res: Response) => {
 // to get the engines
 router.post('/engines', (req: LlmRequest, res: Response) => {
   if (req.role === 'superuser') {
-    res.json({ engines: Controller.engines(req.accessCode != null, req.body) });
+    res.json({ engines: Controller.engines(req.userToken != null, req.body) });
   } else {
     res.status(403).json({ error: 'Unauthorized' });
   }

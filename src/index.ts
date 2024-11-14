@@ -3,6 +3,7 @@ import portfinder from 'portfinder';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
+import bearerToken from 'express-bearer-token';
 import authRouter from './auth/router';
 import userRouter from './user/router';
 import threadRouter from './thread/router';
@@ -35,6 +36,9 @@ app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? ['https://www.witsyai.com', 'https://console.witsyai.com'] : '*'
 }))
 
+// bearer token
+app.use(bearerToken({ reqKey: 'userToken' }));
+
 // we need a configuration
 app.use(configurationMiddleware);
 
@@ -42,6 +46,7 @@ app.use(configurationMiddleware);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/images', express.static(path.join(__dirname, '..', 'data', 'images')));
 
+// our routes
 app.use('/auth', authRouter);
 app.use('/user', userRouter);
 app.use('/thread', threadRouter);

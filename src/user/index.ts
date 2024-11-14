@@ -14,7 +14,7 @@ export default class User {
   private _id: number;
   private _username: string;
   private _email: string;
-  private _accessCode: string;
+  private _userToken: string;
   private _createdAt: Date;
   private _lastLoginAt: Date;
   private _subscriptionTier: UserTier;
@@ -25,7 +25,7 @@ export default class User {
     this._id = id;
     this._username = username;
     this._email = email;
-    this._accessCode = crypto.randomUUID();
+    this._userToken = crypto.randomUUID();
     this._createdAt = new Date();
     this._lastLoginAt = new Date();
     this._subscriptionTier = tier;
@@ -35,7 +35,7 @@ export default class User {
 
   static fromDatabaseRow(row: any): User {
     const user = new User(row.id, row.username, row.email, row.subscription_tier);
-    user._accessCode = row.access_code;
+    user._userToken = row.user_token;
     user._createdAt = new Date(row.created_at);
     user._lastLoginAt = new Date(row.last_login_at);
     user._subscriptionTier = row.subscription_tier;
@@ -63,8 +63,8 @@ export default class User {
     return this._email;
   }
 
-  get accessCode(): string {
-    return this._accessCode;
+  get userToken(): string {
+    return this._userToken;
   }
 
   get createdAt(): Date {

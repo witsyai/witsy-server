@@ -25,7 +25,7 @@ router.post('/create', adminMiddleware, async (req: AuthedRequest, res) => {
     // do it
     const user = await createUser(req.db!, username, email, tier);
     res.status(200).json({
-      accessCode: user.accessCode,
+      userToken: user.userToken,
     });
   } catch (error) {
     const errorMessage = (error instanceof Error && error.cause) ? error.cause : 'Unknown error';

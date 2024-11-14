@@ -17,7 +17,7 @@ export const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunc
   if (engineId === 'ollama') {
     req.llmOpts = { baseURL: '' }
   } else if (engineId) {
-    if (req.accessCode != null) {
+    if (req.userToken != null) {
       const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
       const apiKey = process.env[apiKeyEnvVar];
       if (apiKey) {
