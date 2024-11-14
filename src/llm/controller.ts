@@ -5,6 +5,8 @@ import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
 import PythonPlugin from '../plugins/python';
 import YouTubePlugin from '../plugins/youtube';
+import Configuration, { EngineModel } from '../utils/config';
+import { UserTier } from '../user';
 
 export interface LlmOpts {
   apiKey?: string
@@ -78,12 +80,29 @@ export default {
 
   },
 
-  models: async (engineId: string, llmOpts: LlmOpts): Promise<ModelsList> => {
+  engineModels: async (engineId: string, llmOpts: LlmOpts): Promise<ModelsList> => {
     const models = await loadModels(engineId, llmOpts);
     return models || { chat: [], };
   },
 
-  chat: async function*(engineId: string, modelId: string, userMessages: Message[], prompt: string, attachment: Attachment|null, chatOpts: ChatOpts): AsyncIterable<LlmChunk> {
+  models: (configuration: Configuration, tier: UserTier, superuser: boolean): EngineModel[] => {
+    if (['free', 'basic'].includes(tier)) {
+      return configuration!.modelsBasic;
+    } else if (superuser || ['pro', 'unlimited'].includes(tier)) {
+      return [
+        ...configuration!.modelsBasic,
+        ...configuration!.modelsPro
+      ].sort((a, b) => a.engine.localeCompare(b.engine) || a.model.localeCompare(b.model));
+    } else {
+      throw new Error('Unauthorized');
+    }
+  },
+
+  chat: async function*(
+    configuration: Configuration, engineId: string, modelId: string,
+    userMessages: Message[], prompt: string, attachment: Attachment|null,
+    chatOpts: ChatOpts): AsyncIterable<LlmChunk>
+  {
 
     // else build the messages
     const messages: Message[] = [
@@ -102,8 +121,9 @@ export default {
     engine.addPlugin(new YouTubePlugin())
 
     // image plugin
-    if (process.env.IMAGE_ENGINE && process.env.IMAGE_MODEL) {
-      engine.addPlugin(new ImagePlugin(chatOpts.baseUrl, process.env.IMAGE_ENGINE, process.env.IMAGE_MODEL));
+    const imageModel: EngineModel|undefined = configuration.imageModel;
+    if (imageModel) {
+      engine.addPlugin(new ImagePlugin(chatOpts.baseUrl, imageModel.engine, imageModel.model));
     }
 
     // add the new message to the thread

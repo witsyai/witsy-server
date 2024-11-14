@@ -13,15 +13,36 @@ router.use(accessCodeMiddleware);
 router.use(databaseMiddleware);
 router.use(llmOptsMiddleware);
 
+// router to get accessible models
+router.post('/models', (req: LlmRequest, res: Response) => {
+
+  // depends on a lot of things
+  try {
+    const models = Controller.models(req.configuration!, req.user!.subscriptionTier, req.role === 'superuser');
+    res.json({ models: models });
+  } catch(e) {
+    logger.error('Error while getting models', e);
+    res.status(403).json({ error: 'Unauthorized' });
+  }
+});
+
 // to get the engines
 router.post('/engines', (req: LlmRequest, res: Response) => {
-  res.json({ engines: Controller.engines(req.accessCode != null, req.body) });
+  if (req.role === 'superuser') {
+    res.json({ engines: Controller.engines(req.accessCode != null, req.body) });
+  } else {
+    res.status(403).json({ error: 'Unauthorized' });
+  }
 });
 
 // to get the models of an engine
 router.post('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: Response) => {
-  const engineId = req.params.engine;
-  res.json({ models: await Controller.models(engineId, req.llmOpts!) });
+  if (req.role === 'superuser') {
+    const engineId = req.params.engine;
+    res.json({ models: await Controller.engineModels(engineId, req.llmOpts!) });
+  } else {
+    res.status(403).json({ error: 'Unauthorized' });
+  }
 });
 
 // to chat in the thread
@@ -75,7 +96,9 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
     // now prompt
     let lastSent = null;
     const minDelayMs = 5;
-    const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, attachment, {
+    const stream = await Controller.chat(
+      req.configuration!, req.engineId!, req.modelId!,
+      thread ? thread.messages : userMessages, prompt, attachment, {
       llmOpts: req.llmOpts!,
       baseUrl: `${req.protocol}://${req.get('host')}`
     })
@@ -89,7 +112,7 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
         });
       }
 
-
+      // throttling for nginx
       if (lastSent != null) {
         const elapsed = Date.now() - lastSent;
         if (elapsed < minDelayMs) {
@@ -100,9 +123,11 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
       if (message.type === 'content') {
         llmMessage.appendText(message);
       }
+
+      // usage
       if (message.type === 'usage') {
-        if (req.accessCode != null) {
-          saveUserQuery(req.db!, req.accessCode, threadId || 'unknown',
+        if (req.user) {
+          saveUserQuery(req.db!, req.user, threadId || 'unknown',
             req.engineId!, req.modelId!,
             [
               ...(thread ? thread.messages : userMessages),
@@ -112,6 +137,8 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
           );
         }
       }
+
+      // record
       lastSent = Date.now();
     }
 

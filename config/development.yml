@@ -1,0 +1,12 @@
+
+rateLimits:
+  rpm:
+    free: 100
+    basic: 100
+    pro: 100
+    unlimited: 100
+  tokens24h:
+    free: 1000000
+    basic: 1000000
+    pro: 1000000
+    unlimited: 1000000

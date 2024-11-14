@@ -2,6 +2,10 @@
 import { Request, Response, NextFunction } from 'express';
 import Database from './database';
 import Configuration from './config';
+import { getUserByAccessCode } from '../user/controller';
+import User from '../user';
+
+const configuration = new Configuration();
 
 export type Role = 'admin' | 'superuser' | 'user';
 
@@ -9,11 +13,12 @@ export interface AuthedRequest extends Request {
   configuration?: Configuration
   accessCode?: string
   role?: Role
+  user?: User
   db?: Database
 }
 
 export const configurationMiddleware = (req: AuthedRequest, res: Response, next: NextFunction): void => { 
-  req.configuration = new Configuration();
+  req.configuration = configuration;
   next();
 };
 
@@ -28,9 +33,11 @@ export const accessCodeMiddleware = async (req: AuthedRequest, res: Response, ne
       req.role = 'superuser';
     } else {
       const db = await Database.getInstance();
-      valid = await db.isValidAccessCode(accessCode);
-      if (valid) {
+      const user = await getUserByAccessCode(db, accessCode);
+      if (user != null) {
+        valid = true;
         req.role = 'user';
+        req.user = user;
       }
     }
     if (valid) {

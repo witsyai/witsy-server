@@ -1,7 +1,5 @@
 import { LlmUsage, Message } from "multi-llm-ts";
 import Database from "../utils/database";
-import { getUserByAccessCode } from "../user/controller";
-import logger from "../utils/logger";
 import User from "../user";
 import Configuration from "../utils/config";
 
@@ -41,20 +39,13 @@ export const rateLimitTokens24ForUser = (configuration: Configuration, user: Use
 
 export const saveUserQuery = async (
   db: Database,
-  access_code: string,
+  user: User,
   threadId: string,
   engine: string,
   model: string,
   messages: Message[],
   usage: LlmUsage
 ) => {
-
-  // get user
-  const user = await getUserByAccessCode(db, access_code);
-  if (!user) {
-    logger.warn('User accessCode not found when saving usage', access_code);
-    return;
-  }
 
   // count attachments
   const attachmentsCount = messages.filter(m => m.attachment).length;

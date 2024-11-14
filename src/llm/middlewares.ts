@@ -2,7 +2,6 @@ import { Response, NextFunction } from "express";
 import { Message } from "multi-llm-ts";
 import { AuthedRequest } from "../utils/middlewares";
 import { LlmOpts } from "./controller";
-import { getUserByAccessCode } from "../user/controller";
 import * as usageController from "../usage/controller";
 
 export interface LlmRequest extends AuthedRequest {
@@ -74,38 +73,38 @@ export const rateLimitMiddleware = async (req: LlmRequest, res: Response, next: 
     next();
   }
 
-  // get the user id
-  const user = await getUserByAccessCode(req.db!, req.accessCode!)!;
-  if (!user) {
-    res.status(401).json({ error: 'Invalid accessCode' });
+  // make sure we have a user
+  if (!req.user) {
+    res.status(401).json({ error: 'Invalid user' });
     return;
   }
 
-  const rateLimitRpm = usageController.rateLimitRpmForUser(req.configuration!, user);
-  const rateLimitTokens24 = usageController.rateLimitTokens24ForUser(req.configuration!, user);
-  if (rateLimitRpm === 0 && rateLimitTokens24 == 0) {
-    next();
-    return;
-  }
+  // get applicable rate limits
+  const rateLimitRpm = usageController.rateLimitRpmForUser(req.configuration!, req.user!);
+  const rateLimitTokens24 = usageController.rateLimitTokens24ForUser(req.configuration!, req.user!);
   
-  // get last minute requests count
-  const lastMinuteRequests = await usageController.userQueriesLastMinutes(req.db!, user.id, 1);
-  if (lastMinuteRequests >= rateLimitRpm) {
-    res.status(429).json({ error: 'Rate limit exceeded' });
-    return;
-  } else {
-    res.header('X-RateLimit-Rpm-Limit', `${rateLimitRpm}`);
-    res.header('X-RateLimit-Rpm-Remaining', `${rateLimitRpm - lastMinuteRequests}`);
+  // requests per minute
+  if (rateLimitRpm > 0) {
+    const lastMinuteRequests = await usageController.userQueriesLastMinutes(req.db!, req.user!.id, 1);
+    if (lastMinuteRequests >= rateLimitRpm) {
+      res.status(429).json({ error: 'Rate limit exceeded' });
+      return;
+    } else {
+      res.header('X-RateLimit-Rpm-Limit', `${rateLimitRpm}`);
+      res.header('X-RateLimit-Rpm-Remaining', `${rateLimitRpm - lastMinuteRequests}`);
+    }
   }
 
-  // get tokens over last 24h
-  const tokens24h = await usageController.userTokensLast24Hours(req.db!, user.id);
-  if (tokens24h >= rateLimitTokens24) {
-    res.status(429).json({ error: 'Rate limit exceeded' });
-    return;
-  } else {
-    res.header('X-RateLimit-Tokens24h-Limit',`${rateLimitTokens24}`);
-    res.header('X-RateLimit-Tokens24h-Remaining', `${rateLimitTokens24 - tokens24h}`);
+  // tokens over last 24h
+  if (rateLimitTokens24 > 0) {
+    const tokens24h = await usageController.userTokensLast24Hours(req.db!, req.user!.id);
+    if (tokens24h >= rateLimitTokens24) {
+      res.status(429).json({ error: 'Rate limit exceeded' });
+      return;
+    } else {
+      res.header('X-RateLimit-Tokens24h-Limit',`${rateLimitTokens24}`);
+      res.header('X-RateLimit-Tokens24h-Remaining', `${rateLimitTokens24 - tokens24h}`);
+    }
   }
 
   // ok
