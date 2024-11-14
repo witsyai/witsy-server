@@ -1,5 +1,6 @@
 import User from './index';
 import Database from '../utils/database';
+import logger from '../utils/logger';
 import { LlmUsage, Message } from 'multi-llm-ts';
 
 export const createUser = async (db: Database, userData: { username: string; email: string }): Promise<User> => {
@@ -37,7 +38,8 @@ export const saveUserQuery = async (
   // get user
   const user = await getUserByAccessCode(db, access_code);
   if (!user) {
-    throw new Error('User not found');
+    logger.warn('User accessCode not found when saving usage', access_code);
+    return;
   }
 
   // count attachments

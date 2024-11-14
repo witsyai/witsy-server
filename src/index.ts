@@ -1,6 +1,8 @@
 import express from 'express';
 import portfinder from 'portfinder';
-import path from 'path';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import cors from 'cors';
 import authRouter from './auth/router';
 import userRouter from './user/router';
 import threadRouter from './thread/router';
@@ -8,23 +10,36 @@ import llmRouter from './llm/router';
 import voiceRouter from './voice/router';
 import dotenv from 'dotenv';
 import Database from './utils/database';
-import { logger } from 'multi-llm-ts';
+import { logger as llmLogger } from 'multi-llm-ts';
+import logger from './utils/logger';
+import path from 'path';
 
 dotenv.config();
 
-logger.set((...args: any[]) => {
-  console.log('  - ', ...args);
-});
-
+// init app
 const app = express();
 app.use(express.json({ limit: '32mb' }));
+
+// logging
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', {
+  stream: { write: (message: string) => logger.http(message.trim()), }
+}))
+llmLogger.set((...args: any[]) => {
+  logger.info(`  - ${args.join(' ')}`);
+});
+
+
+// security
+if (process.env.NODE_ENV === 'production') {
+  app.use(helmet())
+}
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? ['https://www.witsyai.com', 'https://console.witsyai.com'] : '*'
+}))
+
+// static access
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/images', express.static(path.join(__dirname, '..', 'data', 'images')));
-
-app.use((req, res, next) => {
-  console.log(`${req.method.padEnd(4)} ${req.path}`);
-  next();
-});
 
 app.use('/auth', authRouter);
 app.use('/user', userRouter);
@@ -40,15 +55,15 @@ const startServer = async () => {
   try {
     // initialize the database
     await Database.getInstance();
-    console.log('Database initialized');
+    logger.debug('Database initialized');
 
     // Find an available port and start the server
     const port = await portfinder.getPortPromise({ port: process.env.PORT ? parseInt(process.env.PORT) : 3000 });
     app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
+      logger.info(`Server is running on http://localhost:${port}`);
     });
   } catch (err) {
-    console.error('Failed to start server', err);
+    logger.error('Failed to start server', err);
   }
 };
 

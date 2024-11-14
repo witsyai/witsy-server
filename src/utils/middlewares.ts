@@ -13,8 +13,12 @@ export const clientIdMiddleware = async (req: AuthedRequest, res: Response, next
   // fisrt check if we have a client id
   const clientId = req.header('x-clientid');
   if (clientId) {
-    const db = await Database.getInstance();
-    if (await db.isValidAccessCode(clientId)) {
+    let valid = (clientId == process.env.AUTHORIZED_CLIENT_ID);
+    if (!valid) {
+      const db = await Database.getInstance();
+      valid = await db.isValidAccessCode(clientId);
+    }
+    if (valid) {
       req.clientId = clientId;
       next();
       return;
