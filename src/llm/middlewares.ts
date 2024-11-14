@@ -3,6 +3,7 @@ import { Message } from "multi-llm-ts";
 import { AuthedRequest } from "../utils/middlewares";
 import { LlmOpts } from "./controller";
 import * as usageController from "../usage/controller";
+import logger from "../utils/logger";
 
 export interface LlmRequest extends AuthedRequest {
   llmOpts?: LlmOpts
@@ -23,6 +24,7 @@ export const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunc
       if (apiKey) {
         req.llmOpts = { apiKey, };
       } else {
+        logger.warn(`no api key found for engine ${engineId}`);
         res.status(400).json({ error: `API key for engine ${engineId} not found` });
         return;
       }
@@ -31,6 +33,7 @@ export const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunc
       if (apiKey) {
         req.llmOpts = { apiKey, };
       } else {
+        logger.warn(`no api key found for engine ${engineId}`);
         res.status(400).json({ error: `API key for engine ${engineId} not found` });
         return;
       }
@@ -47,6 +50,7 @@ export const engineModelMiddleware = (req: LlmRequest, res: Response, next: Next
     req.engineId = engineId;
     req.modelId = modelId;
   } else {
+    logger.warn(`chat denied: engine and/or model missing; engine=[${engineId}], model=[${modelId}]`);
     res.status(400).json({ error: `engine and model required` });
     return;
   }
@@ -59,6 +63,7 @@ export const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: N
   if (messages && Array.isArray(messages)) {
     req.messages = messages;
   } else {
+    logger.warn(`chat denied: messages array missing`);
     res.status(400).json({ error: `messages array required` });
     return;
   }

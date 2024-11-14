@@ -5,6 +5,7 @@ import Configuration from './config';
 import { getUserByToken } from '../user/controller';
 import { timingSafeEqual } from 'crypto';
 import User from '../user';
+import logger from './logger';
 
 const configuration = new Configuration();
 
@@ -64,8 +65,11 @@ export const userTokenMiddleware = async (req: AuthedRequest, res: Response, nex
     return;
   } 
 
+  // log
+  logger.warn(`Unauthorized access. IP address: ${req.ip}`);
+
   // too bad
-  res.status(401).json({ error: 'X-User-Token header is missing or invalid and no custom API keys provided' });
+  res.status(401).json({ error: 'Authorization header is missing or invalid and no custom API keys provided' });
 };
 
 // middleware to check for X-User-Token header
@@ -77,6 +81,9 @@ export const adminMiddleware = async (req: AuthedRequest, res: Response, next: N
     next();
     return;
   }
+
+  // log
+  logger.warn(`Unauthorized access to admin endpoint. IP address: ${req.ip}`);
 
   // too bad
   res.status(401).json({ error: 'Error while authenticating' });
