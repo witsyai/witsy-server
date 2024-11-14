@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { createUser } from './controller';
-import { databaseMiddleware, type AuthedRequest } from '../utils/middlewares';
+import { adminMiddleware, databaseMiddleware, type AuthedRequest } from '../utils/middlewares';
 
 const router = Router();
 router.use(databaseMiddleware);
 
-router.post('/create', async (req: AuthedRequest, res) => {
+router.post('/create', adminMiddleware, async (req: AuthedRequest, res) => {
   try {
     const user = await createUser(req.db!, req.body);
     res.status(200).json({
