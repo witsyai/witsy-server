@@ -1,11 +1,9 @@
-import User from './index';
+import User, { UserTier } from './index';
 import Database from '../utils/database';
 import logger from '../utils/logger';
 
-export const createUser = async (db: Database, userData: { username: string; email: string }): Promise<User> => {
+export const createUser = async (db: Database, username: string, email: string, tier: UserTier): Promise<User> => {
   try {
-    const { username, email } = userData;
-
     // check if username or email is already taken
     const existingUser = await db.getDb()?.get(
       'SELECT * FROM users WHERE username = ? OR email = ?',
@@ -16,7 +14,7 @@ export const createUser = async (db: Database, userData: { username: string; ema
     }
 
     // we can save
-    const user = new User(0, username, email);
+    const user = new User(0, username, email, tier);
     await saveUser(db, user);
     return user;
 

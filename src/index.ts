@@ -10,6 +10,7 @@ import llmRouter from './llm/router';
 import voiceRouter from './voice/router';
 import dotenv from 'dotenv';
 import Database from './utils/database';
+import { configurationMiddleware } from './utils/middlewares';
 import { logger as llmLogger } from 'multi-llm-ts';
 import logger from './utils/logger';
 import path from 'path';
@@ -28,7 +29,6 @@ llmLogger.set((...args: any[]) => {
   logger.info(`  - ${args.join(' ')}`);
 });
 
-
 // security
 if (process.env.NODE_ENV === 'production') {
   app.use(helmet())
@@ -36,6 +36,9 @@ if (process.env.NODE_ENV === 'production') {
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? ['https://www.witsyai.com', 'https://console.witsyai.com'] : '*'
 }))
+
+// we need a configuration
+app.use(configurationMiddleware);
 
 // static access
 app.use(express.static(path.join(__dirname, '..', 'public')));

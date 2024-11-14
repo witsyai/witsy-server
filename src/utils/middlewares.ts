@@ -1,26 +1,37 @@
 
 import { Request, Response, NextFunction } from 'express';
 import Database from './database';
+import Configuration from './config';
+
+export type Role = 'admin' | 'superuser' | 'user';
 
 export interface AuthedRequest extends Request {
+  configuration?: Configuration
   accessCode?: string
-  isAdmin?: boolean
+  role?: Role
   db?: Database
 }
+
+export const configurationMiddleware = (req: AuthedRequest, res: Response, next: NextFunction): void => { 
+  req.configuration = new Configuration();
+  next();
+};
 
 // middleware to check for X-Access-Code header
 export const accessCodeMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
   
-  // init
-  req.isAdmin = false;
-
   // fisrt check if we have a client id
   const accessCode = req.header('x-access-code') || req.header('x-clientid');
   if (accessCode) {
     let valid = (accessCode == process.env.SUPERUSER_ACCESS_CODE || accessCode == process.env.AUTHORIZED_CLIENT_ID);
-    if (!valid) {
+    if (valid) {
+      req.role = 'superuser';
+    } else {
       const db = await Database.getInstance();
       valid = await db.isValidAccessCode(accessCode);
+      if (valid) {
+        req.role = 'user';
+      }
     }
     if (valid) {
       req.accessCode = accessCode;
@@ -53,7 +64,7 @@ export const adminMiddleware = async (req: AuthedRequest, res: Response, next: N
   const accessCode = req.header('x-access-code');
   if (accessCode === process.env.ADMIN_ACCESS_CODE) {
     req.accessCode = accessCode;
-    req.isAdmin = true;
+    req.role = 'admin';
     next();
     return;
   }

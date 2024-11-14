@@ -1,4 +1,15 @@
 
+export enum UserTier {
+  Free = 'free',
+  Basic = 'basic',
+  Pro = 'pro',
+  Unlimited = 'unlimited'
+}
+
+export const isValidUserTier = (tier: string): boolean => {
+  return Object.values(UserTier).includes(tier as UserTier);
+};
+
 export default class User {
   private _id: number;
   private _username: string;
@@ -6,24 +17,24 @@ export default class User {
   private _accessCode: string;
   private _createdAt: Date;
   private _lastLoginAt: Date;
-  private _subscriptionTier: string;
+  private _subscriptionTier: UserTier;
   private _subscriptionExpiresAt: Date | null;
   private _creditsLeft: number;
 
-  constructor(id: number, username: string, email: string) {
+  constructor(id: number, username: string, email: string, tier: UserTier) {
     this._id = id;
     this._username = username;
     this._email = email;
     this._accessCode = crypto.randomUUID();
     this._createdAt = new Date();
     this._lastLoginAt = new Date();
-    this._subscriptionTier = 'free';
+    this._subscriptionTier = tier;
     this._subscriptionExpiresAt = null;
     this._creditsLeft = 0;
   }
 
   static fromDatabaseRow(row: any): User {
-    const user = new User(row.id, row.username, row.email);
+    const user = new User(row.id, row.username, row.email, row.subscription_tier);
     user._accessCode = row.access_code;
     user._createdAt = new Date(row.created_at);
     user._lastLoginAt = new Date(row.last_login_at);
@@ -68,11 +79,11 @@ export default class User {
     this._lastLoginAt = value;
   }
 
-  get subscriptionTier(): string {
+  get subscriptionTier(): UserTier {
     return this._subscriptionTier;
   }
 
-  set subscriptionTier(value: string) {
+  set subscriptionTier(value: UserTier) {
     this._subscriptionTier = value;
   }
 

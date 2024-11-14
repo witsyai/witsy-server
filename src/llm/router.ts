@@ -1,72 +1,12 @@
 
-import { Router, Response, NextFunction } from 'express';
-import { accessCodeMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
-import Controller, { LlmOpts } from './controller';
+import { Router, Response } from 'express';
+import { accessCodeMiddleware, databaseMiddleware } from '../utils/middlewares';
+import { engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment, Message } from 'multi-llm-ts';
 import { saveUserQuery } from '../usage/controller';
+import Controller from './controller';
 import logger from '../utils/logger';
-
-interface LlmRequest extends AuthedRequest {
-  llmOpts?: LlmOpts
-  engineId?: string
-  modelId?: string
-  messages?: Message[]
-}
-
-// middleware to add llm options to the request
-const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
-  const engineId = req.params.engine || req.body.engine;
-  if (engineId === 'ollama') {
-    req.llmOpts = { baseURL: '' }
-  } else if (engineId) {
-    if (req.accessCode != null) {
-      const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
-      const apiKey = process.env[apiKeyEnvVar];
-      if (apiKey) {
-        req.llmOpts = { apiKey, };
-      } else {
-        res.status(400).json({ error: `API key for engine ${engineId} not found` });
-        return;
-      }
-    } else {
-      const apiKey = req.body[`${engineId}Key`];
-      if (apiKey) {
-        req.llmOpts = { apiKey, };
-      } else {
-        res.status(400).json({ error: `API key for engine ${engineId} not found` });
-        return;
-      }
-    }
-  }
-  next();
-};
-
-// middleware to add engine/model options to the request
-const engineModelMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
-  const engineId = req.params.engine || req.body.engine;
-  const modelId = req.params.model || req.body.model;
-  if (engineId && modelId) {
-    req.engineId = engineId;
-    req.modelId = modelId;
-  } else {
-    res.status(400).json({ error: `engine and model required` });
-    return;
-  }
-  next();
-};
-
-// middleware to add messages to the request
-const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
-  const messages = req.body.messages;
-  if (messages && Array.isArray(messages)) {
-    req.messages = messages;
-  } else {
-    res.status(400).json({ error: `messages array required` });
-    return;
-  }
-  next();
-};
 
 const router = Router();
 router.use(accessCodeMiddleware);
@@ -85,7 +25,7 @@ router.post('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: R
 });
 
 // to chat in the thread
-router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Response) => {
+router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: LlmRequest, res: Response) => {
   
   // load params
   const { prompt, attachment: attachInfo } = req.body;
