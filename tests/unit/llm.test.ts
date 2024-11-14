@@ -47,7 +47,11 @@ const thread8 = [
   new Message('user', 'prompt4'),
   new Message('assistant', 'reponse4'),
 ];
-  
+
+test('instructions include date and time', async () => {
+  expect(_private.instructions()).toContain('Current date and time are');
+});
+
 test('build the messages with no limits', async () => {
 
   let messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread0, false, true);
