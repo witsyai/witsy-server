@@ -1,4 +1,7 @@
 
+log:
+  level: debug
+
 rateLimits:
   rpm:
     free: 100

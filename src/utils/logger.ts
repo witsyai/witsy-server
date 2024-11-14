@@ -1,11 +1,11 @@
 import winston from 'winston'
 import fs from 'fs-extra'
 
-fs.ensureDirSync('log/');
+fs.ensureDirSync('./log/');
 
 const colorizer = winston.format.colorize();
 
-export default winston.createLogger({
+const logger = winston.createLogger({
   transports: [
     new (winston.transports.Console)({
       format: winston.format.combine(
@@ -36,3 +36,11 @@ export default winston.createLogger({
     }),
   ]
 });
+
+export const setLogLevel = (level: string) => {
+  for (const transport of logger.transports) {
+    transport.level = level;
+  }
+};
+
+export default logger;

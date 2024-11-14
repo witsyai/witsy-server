@@ -1,7 +1,7 @@
 
 import fs from 'fs';
 import YAML from 'yaml';
-import logger from './logger';
+import logger, { setLogLevel } from './logger';
 
 export interface EngineModel {
   engine: string
@@ -10,6 +10,9 @@ export interface EngineModel {
 }
 
 interface ConfiguratioData {
+  log?: {
+    level: string
+  }
   rateLimits?: {
     rpm: {
       free: number,
@@ -86,6 +89,11 @@ export default class Configuration {
       const yaml = await fs.promises.readFile(this.envConfigPath, 'utf8');
       const envConfig = YAML.parse(yaml);
       this.data = { ...this.data, ...envConfig };
+    }
+
+    // log level
+    if (this.data.log) {
+      setLogLevel(this.data.log!.level)
     }
 
   }
