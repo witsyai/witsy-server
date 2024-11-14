@@ -2,6 +2,7 @@ import express from 'express';
 import portfinder from 'portfinder';
 import path from 'path';
 import authRouter from './auth/router';
+import userRouter from './user/router';
 import threadRouter from './thread/router';
 import llmRouter from './llm/router';
 import voiceRouter from './voice/router';
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/user', userRouter);
 app.use('/thread', threadRouter);
 app.use('/llm', llmRouter);
 app.use('/voice', voiceRouter);

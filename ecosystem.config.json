@@ -1,7 +1,7 @@
 {
 	"apps": [
 		{
-			"name": "llm-server",
+			"name": "witsy-server",
 			"script": "node ./dist/index.js",
 			"env": {
 				"PORT": 3000,

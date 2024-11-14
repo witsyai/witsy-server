@@ -1,24 +1,17 @@
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { clientIdMiddleware } from '../utils/middlewares';
+import { Router, Response, NextFunction } from 'express';
+import { clientIdMiddleware, useDatabaseMiddleware, AuthedRequest } from '../utils/middlewares';
 import Controller, { LlmOpts } from './controller';
+import { loadThread, saveThread } from '../thread/controller';
+import { saveUserQuery } from '../user/controller';
 import { Attachment, Message } from 'multi-llm-ts';
-import Thread from '../thread';
 
-interface LlmRequest extends Request {
-  hasClientId?: boolean
+interface LlmRequest extends AuthedRequest {
   llmOpts?: LlmOpts
   engineId?: string
   modelId?: string
   messages?: Message[]
 }
-
-// middleware to check if the client id is present
-const hasClientIdMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
-  const header = req.header('x-clientid');
-  req.hasClientId = (header != null && header.length > 0);
-  next();
-};
 
 // middleware to add llm options to the request
 const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
@@ -26,7 +19,7 @@ const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunction): 
   if (engineId === 'ollama') {
     req.llmOpts = { baseURL: '' }
   } else if (engineId) {
-    if (req.hasClientId) {
+    if (req.clientId != null) {
       const apiKeyEnvVar = `${engineId.toUpperCase()}_API_KEY`;
       const apiKey = process.env[apiKeyEnvVar];
       if (apiKey) {
@@ -76,12 +69,12 @@ const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunc
 
 const router = Router();
 router.use(clientIdMiddleware);
-router.use(hasClientIdMiddleware);
+router.use(useDatabaseMiddleware);
 router.use(llmOptsMiddleware);
 
 // to get the engines
 router.post('/engines', (req: LlmRequest, res: Response) => {
-  res.json({ engines: Controller.engines(req.hasClientId!, req.body) });
+  res.json({ engines: Controller.engines(req.clientId != null, req.body) });
 });
 
 // to get the models of an engine
@@ -120,7 +113,7 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
   // load the conversation
   let thread = null
   if (threadId) {
-    thread = await Thread.load(threadId);
+    thread = await loadThread(req.db!, threadId);
     if (!thread) {
       res.status(404).json({ error: `Conversation ${threadId} not found` });
       return;
@@ -133,8 +126,9 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
 		'Transfer-Encoding': 'chunked'
 	});
 
-  // the response
-  const response = new Message('assistant');
+  // the messages
+  const userMessage = new Message('user', prompt, attachment || undefined); 
+  const llmMessage = new Message('assistant');
 
 	// f*ing nginx
 	const delay = (ms: number) => {
@@ -157,9 +151,11 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
 		}
     res.write(JSON.stringify(message));
     if (message.type === 'content') {
-      response.appendText(message);
+      llmMessage.appendText(message);
     }
     if (message.type === 'usage') {
+
+      // log
       let input = `${message.usage.prompt_tokens}`;
       const output = `${message.usage.completion_tokens}`;
       if (message.usage.prompt_tokens_details?.cached_tokens) {
@@ -167,15 +163,27 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
         input = `${input} (${cached} cached)`;
       }
       console.log(`  - Usage: input tokens = ${input}, output tokens = ${output}`);
+
+      // save
+      if (req.clientId != null) {
+        saveUserQuery(req.db!, req.header('x-clientid')!,
+          req.engineId!, req.modelId!,
+          [
+            ...(thread ? thread.messages : userMessages),
+            userMessage, llmMessage,
+          ],
+          message.usage
+        );
+      }
     }
 		lastSent = Date.now();
   }
 
   // update the thread
   if (thread) {
-    thread.addMessage(new Message('user', prompt));
-    thread.addMessage(response);
-    await thread.save();
+    thread.addMessage(userMessage);
+    thread.addMessage(llmMessage);
+    await saveThread(req.db!, thread);
   }
 
   // done

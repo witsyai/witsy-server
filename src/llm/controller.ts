@@ -142,7 +142,7 @@ export default {
     // generate response from the engine
     //console.log(messages);
     const completion = await engine.complete(modelId, messages, { usage: true });
-    return completion.content;
+    return completion.content || '';
 
   }
 

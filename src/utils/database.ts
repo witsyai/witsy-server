@@ -1,7 +1,7 @@
-
 import sqlite3 from 'sqlite3';
 import { open, Database as SqliteDatabase } from 'sqlite';
 import fs from 'fs';
+import User from '../user';
 
 class Database {
   private static instance: Database;
@@ -23,21 +23,20 @@ class Database {
       filename: './data/database.sqlite',
       driver: sqlite3.Database
     });
-    await this.db.exec(`
-      CREATE TABLE IF NOT EXISTS threads (
-        id TEXT PRIMARY KEY,
-        messages TEXT
-      )
-    `);
+    await this.db.migrate({
+      migrationsPath: './migrations'
+    });
   }
 
-  public async saveThread(id: string, messages: string) {
-    await this.db?.run('INSERT OR REPLACE INTO threads (id, messages) VALUES (?, ?)', [id, messages]);
+  public getDb() {
+    return this.db;
   }
 
-  public async getThread(id: string) {
-    return this.db?.get('SELECT * FROM threads WHERE id = ?', [id]);
+  public async isValidAccessCode(code: string) {
+    const result = await this.db?.get('SELECT COUNT(*) AS count FROM users WHERE access_code = ?', [code]);
+    return result.count === 1;
   }
+
 }
 
 export default Database;

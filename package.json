@@ -1,5 +1,5 @@
 {
-  "name": "llm-server",
+  "name": "witsy-server",
   "version": "0.0.1",
   "description": "A server based on the Multi-LLM project",
   "main": "./dist/index.js",

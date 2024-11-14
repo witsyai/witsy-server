@@ -1,14 +1,24 @@
 
 import { Request, Response, NextFunction } from 'express';
+import Database from './database';
+
+export interface AuthedRequest extends Request {
+  clientId?: string
+  db?: Database
+}
 
 // middleware to check for API_KEY header
-export const clientIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+export const clientIdMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
   
   // fisrt check if we have a client id
   const clientId = req.header('x-clientid');
-  if (clientId === process.env.AUTHORIZED_CLIENT_ID) {
-    next();
-    return;
+  if (clientId) {
+    const db = await Database.getInstance();
+    if (await db.isValidAccessCode(clientId)) {
+      req.clientId = clientId;
+      next();
+      return;
+    }
   }
 
   // we need at least one api key
@@ -26,4 +36,9 @@ export const clientIdMiddleware = (req: Request, res: Response, next: NextFuncti
 
   // too bad
   res.status(401).json({ error: 'X-ClientId header is missing or invalid and no custom API keys provided' });
+};
+
+export const useDatabaseMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
+  req.db = await Database.getInstance();
+  next();
 };
