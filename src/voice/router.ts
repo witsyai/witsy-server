@@ -10,7 +10,7 @@ router.post('/tts', accessCodeMiddleware, async (req: Request, res: Response) =>
 
   // auth is done so we have one of them
   // prioritize the one provided in the body (user)
-  let apiKey = req.body.openaiKey || process.env.OPENAI_API_KEY;
+  const apiKey = req.body.openaiKey || process.env.OPENAI_API_KEY;
   const client = new OpenAI({ apiKey: apiKey })
   
   // call

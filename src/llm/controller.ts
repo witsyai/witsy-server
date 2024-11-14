@@ -37,7 +37,7 @@ const messagesPayload = (
 ): Message[] => {
 
   // init with new prompt
-  let messages: Message[] = [];
+  const messages: Message[] = [];
 
   // conversation length
   let messagesCount = 0;

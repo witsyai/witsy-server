@@ -1,7 +1,6 @@
 import sqlite3 from 'sqlite3';
 import { open, Database as SqliteDatabase } from 'sqlite';
 import fs from 'fs';
-import User from '../user';
 
 class Database {
   private static instance: Database;
