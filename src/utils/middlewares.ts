@@ -42,7 +42,7 @@ export const clientIdMiddleware = async (req: AuthedRequest, res: Response, next
   res.status(401).json({ error: 'X-ClientId header is missing or invalid and no custom API keys provided' });
 };
 
-export const useDatabaseMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
+export const databaseMiddleware = async (req: AuthedRequest, res: Response, next: NextFunction): Promise<void> => {
   req.db = await Database.getInstance();
   next();
 };

@@ -1,7 +1,6 @@
 import User from './index';
 import Database from '../utils/database';
 import logger from '../utils/logger';
-import { LlmUsage, Message } from 'multi-llm-ts';
 
 export const createUser = async (db: Database, userData: { username: string; email: string }): Promise<User> => {
   try {
@@ -17,56 +16,23 @@ export const createUser = async (db: Database, userData: { username: string; ema
     }
 
     // we can save
-    const user = new User(crypto.randomUUID(), username, email);
+    const user = new User(0, username, email);
     await saveUser(db, user);
     return user;
 
   } catch (error) {
+    logger.error('Error creating user', error);
     throw new Error('Unknown error creating user', { cause: error });
   }
 };
 
-export const saveUserQuery = async (
-  db: Database,
-  access_code: string,
-  engine: string,
-  model: string,
-  messages: Message[],
-  usage: LlmUsage
-) => {
-
-  // get user
-  const user = await getUserByAccessCode(db, access_code);
-  if (!user) {
-    logger.warn('User accessCode not found when saving usage', access_code);
-    return;
-  }
-
-  // count attachments
-  const attachmentsCount = messages.filter(m => m.attachment).length;
-
-  // extract data from usage
-  const inputTokens = usage.prompt_tokens;
-  const inputCached = usage.prompt_tokens_details?.cached_tokens || 0;
-  const inputAudioTokens = usage.prompt_tokens_details?.audio_tokens || 0;
-  const outputTokens = usage.completion_tokens;
-  const outputAudioTokens = usage.completion_tokens_details?.audio_tokens || 0;
-
-  // Insert data into queries table
-  await db.getDb()?.run(
-    `INSERT INTO queries (uuid, user_id, created_at, engine, model, message_count, attachment_count, input_tokens, input_cached_tokens, input_audio_tokens, output_tokens, output_audio_tokens) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [crypto.randomUUID(), user.uuid, new Date(), engine, model, messages.length, attachmentsCount, inputTokens, inputCached, inputAudioTokens, outputTokens, outputAudioTokens]
-  );
+export const getUserById = async (db: Database, id: number): Promise<User | null> => {
+  const userData = await db.getDb()?.get('SELECT * FROM users WHERE id = ?', [id]);
+  return userData ? User.fromDatabaseRow(userData) : null;
 }
 
 export const getUserByEmail = async (db: Database, email: string): Promise<User | null> => {
   const userData = await db.getDb()?.get('SELECT * FROM users WHERE email = ?', [email]);
-  return userData ? User.fromDatabaseRow(userData) : null;
-}
-
-export const getUserById = async (db: Database, userId: string): Promise<User | null> => {
-  const userData = await db.getDb()?.get('SELECT * FROM users WHERE uuid = ?', [userId]);
   return userData ? User.fromDatabaseRow(userData) : null;
 }
 
@@ -75,10 +41,48 @@ export const getUserByAccessCode = async (db: Database, accessCode: string): Pro
   return userData ? User.fromDatabaseRow(userData) : null;
 }
 
-const saveUser = async (db: Database, user: User) => {
-  await db.getDb()?.run(
-    `INSERT OR REPLACE INTO users (uuid, username, email, access_code, created_at, last_login_at, subscription_tier, subscription_expires_at) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [user.uuid, user.username, user.email, user.accessCode, user.createdAt, user.lastLoginAt, user.subscriptionTier, user.subscriptionExpiresAt]
-  );
+const saveUser = async (db: Database, user: User): Promise<void> => {
+
+  // insert or update?
+  if (user.id === 0) {
+
+    const result = await db.getDb()?.run(
+      `INSERT INTO users (
+        username, email, access_code, created_at, last_login_at,
+        subscription_tier, subscription_expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user.username, user.email, user.accessCode, user.createdAt, user.lastLoginAt,
+        user.subscriptionTier, user.subscriptionExpiresAt
+      ]
+    );
+
+    if (result) {
+      const lastId = await db.getDb()?.get('SELECT last_insert_rowid() as id');
+      if (lastId) {
+        user.id = lastId.id;
+      }
+    }
+
+  } else {
+    
+    await db.getDb()?.run(
+      `UPDATE users
+      SET
+        username = ?,
+        email = ?,
+        access_code = ?,
+        created_at = ?,
+        last_login_at = ?,
+        subscription_tier = ?,
+        subscription_expires_at = ?,
+        credits_left = ?
+      WHERE
+        id = ?`,
+      [
+        user.username, user.email, user.accessCode, user.createdAt, user.lastLoginAt,
+        user.subscriptionTier, user.subscriptionExpiresAt, user.creditsLeft, user.id
+      ]
+    );
+  }
 };

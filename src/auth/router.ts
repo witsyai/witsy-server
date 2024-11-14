@@ -1,10 +1,10 @@
 
 import { Router, Response } from 'express';
-import { useDatabaseMiddleware, AuthedRequest } from '../utils/middlewares';
+import { databaseMiddleware, AuthedRequest } from '../utils/middlewares';
 import { getUserByEmail } from '../user/controller';
 
 const router = Router();
-router.use(useDatabaseMiddleware);
+router.use(databaseMiddleware);
 
 // to create a new thread
 router.post('/verify', async (req: AuthedRequest, res: Response) => {

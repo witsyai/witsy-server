@@ -1,10 +1,11 @@
 
 import { Router, Response, NextFunction } from 'express';
-import { clientIdMiddleware, useDatabaseMiddleware, AuthedRequest } from '../utils/middlewares';
+import { clientIdMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
 import Controller, { LlmOpts } from './controller';
 import { loadThread, saveThread } from '../thread/controller';
-import { saveUserQuery } from '../user/controller';
 import { Attachment, Message } from 'multi-llm-ts';
+import { saveUserQuery } from '../usage/controller';
+import logger from '../utils/logger';
 
 interface LlmRequest extends AuthedRequest {
   llmOpts?: LlmOpts
@@ -69,7 +70,7 @@ const engineMessagesMiddleware = (req: LlmRequest, res: Response, next: NextFunc
 
 const router = Router();
 router.use(clientIdMiddleware);
-router.use(useDatabaseMiddleware);
+router.use(databaseMiddleware);
 router.use(llmOptsMiddleware);
 
 // to get the engines
@@ -105,14 +106,14 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
 
   // load thread or messages
   const { thread: threadId, messages: userMessages } = req.body;
-  if (!threadId && (!userMessages || !Array.isArray(userMessages))) {
-    res.status(400).json({ error: 'thread or messages required' });
+  if (!threadId) {
+    res.status(400).json({ error: 'thread id required' });
     return;
   }
 
   // load the conversation
   let thread = null
-  if (threadId) {
+  if (threadId && !userMessages) {
     thread = await loadThread(req.db!, threadId);
     if (!thread) {
       res.status(404).json({ error: `Conversation ${threadId} not found` });
@@ -120,81 +121,93 @@ router.post('/chat', engineModelMiddleware, async (req: LlmRequest, res: Respons
     }
   }
 
-  // add headers
-	res.writeHead(200, {
-		'Content-Type': 'application/json',
-		'Transfer-Encoding': 'chunked'
-	});
+  try {
 
-  // the messages
-  const userMessage = new Message('user', prompt, attachment || undefined); 
-  const llmMessage = new Message('assistant');
+    // the messages
+    const userMessage = new Message('user', prompt, attachment || undefined); 
+    const llmMessage = new Message('assistant');
 
-	// f*ing nginx
-	const delay = (ms: number) => {
-		return new Promise(resolve => setTimeout(resolve, ms));
-	}
-
-  // now prompt
-	let lastSent = null;
-	const minDelayMs = 5;
-  const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, attachment, {
-    llmOpts: req.llmOpts!,
-    baseUrl: `${req.protocol}://${req.get('host')}`
-  })
-  for await (const message of stream) {
-		if (lastSent != null) {
-			const elapsed = Date.now() - lastSent;
-			if (elapsed < minDelayMs) {
-				await delay(minDelayMs-elapsed);
-			}
-		}
-    res.write(JSON.stringify(message));
-    if (message.type === 'content') {
-      llmMessage.appendText(message);
+    // f*ing nginx
+    const delay = (ms: number) => {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
-    if (message.type === 'usage') {
 
-      // log
-      let input = `${message.usage.prompt_tokens}`;
-      const output = `${message.usage.completion_tokens}`;
-      if (message.usage.prompt_tokens_details?.cached_tokens) {
-        const cached = message.usage.prompt_tokens_details.cached_tokens;
-        input = `${input} (${cached} cached)`;
-      }
-      console.log(`  - Usage: input tokens = ${input}, output tokens = ${output}`);
+    // now prompt
+    let lastSent = null;
+    const minDelayMs = 5;
+    const stream = await Controller.chat(req.engineId!, req.modelId!, thread ? thread.messages : userMessages, prompt, attachment, {
+      llmOpts: req.llmOpts!,
+      baseUrl: `${req.protocol}://${req.get('host')}`
+    })
+    for await (const message of stream) {
 
-      // save
-      if (req.clientId != null) {
-        saveUserQuery(req.db!, req.header('x-clientid')!,
-          req.engineId!, req.modelId!,
-          [
-            ...(thread ? thread.messages : userMessages),
-            userMessage, llmMessage,
-          ],
-          message.usage
-        );
+      // headers
+      if (lastSent == null) {
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Transfer-Encoding': 'chunked'
+        });
       }
+
+
+      if (lastSent != null) {
+        const elapsed = Date.now() - lastSent;
+        if (elapsed < minDelayMs) {
+          await delay(minDelayMs-elapsed);
+        }
+      }
+      res.write(JSON.stringify(message));
+      if (message.type === 'content') {
+        llmMessage.appendText(message);
+      }
+      if (message.type === 'usage') {
+        if (req.clientId != null) {
+          saveUserQuery(req.db!, req.clientId, threadId || 'unknown',
+            req.engineId!, req.modelId!,
+            [
+              ...(thread ? thread.messages : userMessages),
+              userMessage, llmMessage,
+            ],
+            message.usage
+          );
+        }
+      }
+      lastSent = Date.now();
     }
-		lastSent = Date.now();
-  }
 
-  // update the thread
-  if (thread) {
-    thread.addMessage(userMessage);
-    thread.addMessage(llmMessage);
-    await saveThread(req.db!, thread);
-  }
+    // update the thread
+    if (thread) {
+      thread.addMessage(userMessage);
+      thread.addMessage(llmMessage);
+      if (thread.title.length === 0) {
+        try {
+          thread.title = await Controller.title(req.engineId!, req.modelId!, thread.messages, req.llmOpts!);
+        } catch (e) {
+          logger.warn('Error while titling thread', e);
+        }
+      }
+      await saveThread(req.db!, thread);
+    }
 
-  // done
-  res.end();
+    // done
+    res.end();
+
+  } catch (e) {
+    logger.error('Error in chat', e);
+    res.status(500).json({ error: 'Error in chat' });
+  }
 
 });
 
 // to chat in the thread
 router.post('/title', engineModelMiddleware, engineMessagesMiddleware, async (req: LlmRequest, res: Response) => {
-  const title = await Controller.title(req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
-  res.json({ title: title });
+  try {
+    const title = await Controller.title(req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
+    res.json({ title: title });
+  } catch (e) {
+    logger.error('Error in title', e);
+    res.status(500).json({ error: 'Error in title' });
+  }
 });
 
 export default router;
