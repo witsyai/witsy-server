@@ -6,6 +6,7 @@ import logger from './logger';
 export interface EngineModel {
   engine: string
   model: string
+  label: string
 }
 
 interface ConfiguratioData {

@@ -136,7 +136,7 @@ export default {
       return [
         ...configuration!.modelsBasic,
         ...configuration!.modelsPro
-      ].sort((a, b) => a.engine.localeCompare(b.engine) || a.model.localeCompare(b.model));
+      ]//.sort((a, b) => a.engine.localeCompare(b.engine) || a.model.localeCompare(b.model));
     } else {
       throw new Error('Unauthorized');
     }
