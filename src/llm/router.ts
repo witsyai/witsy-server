@@ -28,8 +28,9 @@ router.post('/models', (req: LlmRequest, res: Response) => {
 
 // to get the engines
 router.post('/engines', (req: LlmRequest, res: Response) => {
-  if (req.role === 'superuser') {
-    res.json({ engines: Controller.engines(req.userToken != null, req.body) });
+  const engines = Controller.engines(req.userToken != null, req.body);
+  if (engines.length > 0) {
+    res.json({ engines: engines });
   } else {
     res.status(403).json({ error: 'Unauthorized' });
   }
@@ -37,9 +38,10 @@ router.post('/engines', (req: LlmRequest, res: Response) => {
 
 // to get the models of an engine
 router.post('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: Response) => {
-  if (req.role === 'superuser') {
-    const engineId = req.params.engine;
-    res.json({ models: await Controller.engineModels(engineId, req.llmOpts!) });
+  const engineId = req.params.engine;
+  const models = await Controller.engineModels(engineId, req.llmOpts!);
+  if (models.chat.length > 0) {
+    res.json({ models: models });
   } else {
     res.status(403).json({ error: 'Unauthorized' });
   }
@@ -68,6 +70,7 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
   // load thread or messages
   const { thread: threadId, messages: userMessages } = req.body;
   if (!threadId) {
+    logger.warn('chat denied: no thread id provided');
     res.status(400).json({ error: 'thread id required' });
     return;
   }
@@ -77,6 +80,7 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
   if (threadId && !userMessages) {
     thread = await loadThread(req.db!, threadId);
     if (!thread) {
+      logger.warn(`chat denied: thread ${threadId} not found`);
       res.status(404).json({ error: `Conversation ${threadId} not found` });
       return;
     }
