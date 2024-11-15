@@ -66,7 +66,7 @@ export const userTokenMiddleware = async (req: AuthedRequest, res: Response, nex
   } 
 
   // log
-  logger.warn(`Unauthorized access. IP address: ${req.ip}`);
+  logger.warn(`Unauthorized access. User token: "${req.userToken}". IP address: ${req.ip}`);
 
   // too bad
   res.status(401).json({ error: 'Authorization header is missing or invalid and no custom API keys provided' });
@@ -83,7 +83,7 @@ export const adminMiddleware = async (req: AuthedRequest, res: Response, next: N
   }
 
   // log
-  logger.warn(`Unauthorized access to admin endpoint. IP address: ${req.ip}`);
+  logger.warn(`Unauthorized access to admin endpoint. User token: "${req.userToken}". IP address: ${req.ip}`);
 
   // too bad
   res.status(401).json({ error: 'Error while authenticating' });

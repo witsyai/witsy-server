@@ -22,7 +22,7 @@ router.post('/models', (req: LlmRequest, res: Response) => {
     res.json({ models: models });
   } catch(e) {
     logger.error('Error while getting models', e);
-    res.status(403).json({ error: 'Unauthorized' });
+    res.status(403).json({ error: 'No models available' });
   }
 });
 
@@ -32,7 +32,7 @@ router.post('/engines', (req: LlmRequest, res: Response) => {
   if (engines.length > 0) {
     res.json({ engines: engines });
   } else {
-    res.status(403).json({ error: 'Unauthorized' });
+    res.status(403).json({ error: 'No providers available' });
   }
 });
 
@@ -43,7 +43,7 @@ router.post('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: R
   if (models.chat.length > 0) {
     res.json({ models: models });
   } else {
-    res.status(403).json({ error: 'Unauthorized' });
+    res.status(403).json({ error: 'No models available' });
   }
 });
 

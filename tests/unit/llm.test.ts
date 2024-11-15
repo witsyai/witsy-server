@@ -49,7 +49,7 @@ const thread8 = [
 ];
 
 test('instructions include date and time', async () => {
-  expect(_private.instructions()).toContain('Current date and time are');
+  expect(_private.instructions()).toMatch(/date.*time/i);
 });
 
 test('build the messages with no limits', async () => {

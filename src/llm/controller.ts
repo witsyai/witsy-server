@@ -1,5 +1,5 @@
 
-import { Attachment, igniteEngine, LlmChunk, loadModels, Message, ModelsList } from 'multi-llm-ts';
+import { Attachment, igniteEngine, LlmChunk, LlmCompletionOpts, loadModels, Message, ModelsList } from 'multi-llm-ts';
 import BrowsePlugin from '../plugins/browse';
 import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
@@ -18,13 +18,13 @@ export interface ChatOpts {
   baseUrl: string
 }
 
-const _instructions = 'You are an AI assistant designed to assist users by providing accurate information, answering questions, and offering helpful suggestions. Your main objectives are to understand the user\'s needs, communicate clearly, and provide responses that are informative, concise, and relevant.'
+const _instructions = 'You are a helpful AI assistant. You provide clear, informative, concise, and relevant responses.'
 const _titling_instructions = 'You are an assistant whose task is to find the best title for the conversation below. The title should be just a few words.'
 const _titling_prompt = 'Provide a title for the conversation above. Do not return anything other than the title. Do not wrap responses in quotes.'
   
 const instructions = (): string => {
   let instr = _instructions;
-  instr += ` Current date and time are ${new Date().toLocaleString()}.`;
+  instr += ` Date/time: ${new Date().toLocaleString()}.`;
   return instr;
 }
 
@@ -49,7 +49,7 @@ const messagesPayload = (
     // prep all
     const message = thread[i];
     const attach = includeAttachments && attachmentCount < chatMaxAttachments && message.attachment != null && message.attachment.contents?.length;
-    const attachment = attach ? new Attachment(message.attachment.contents, message.attachment.mimeType) : undefined;
+    const attachment = attach ? new Attachment(message.attachment!.contents, message.attachment!.mimeType) : undefined;
     const payload = new Message(message.role, message.content, attachment);
     messages.push(payload);
 
@@ -138,7 +138,7 @@ export default {
         ...configuration!.modelsPro
       ]//.sort((a, b) => a.engine.localeCompare(b.engine) || a.model.localeCompare(b.model));
     } else {
-      throw new Error('Unauthorized');
+      throw new Error('Unknown user tier');
     }
   },
 
@@ -171,9 +171,24 @@ export default {
     }
     messages.push(userMessage);
 
+    // our options
+    const llmOpts: LlmCompletionOpts = {
+      autoSwitchVision: true,
+      usage: true,
+    }
+
+    // we decide model switching here
+    if (engineId === 'openai') {
+      llmOpts.models = [ { id: 'gpt-4o', name: '' } ]
+    } else if (engineId === 'anthropic') {
+      llmOpts.models = [ { id: 'claude-3-haiku-20240307', name: '' } ]
+    } else if (engineId === 'google') {
+      llmOpts.models = [ { id: 'gemini-1.5-flash-latest', name: '' } ]
+    }
+
     // generate response from the engine
     //console.log(messages);
-    const stream = engine.generate(modelId, messages, { usage: true });
+    const stream = engine.generate(modelId, messages, llmOpts);
     for await (const message of stream) {
       yield message;
     }
