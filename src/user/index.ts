@@ -40,7 +40,7 @@ export default class User {
     user._lastLoginAt = new Date(row.last_login_at);
     user._subscriptionTier = row.subscription_tier;
     user._subscriptionExpiresAt = row.subscription_expires_at ? new Date(row.subscription_expires_at) : null;
-    user._creditsLeft = row.credits
+    user._creditsLeft = row.credits_left
     return user;
   }
 
@@ -63,8 +63,16 @@ export default class User {
     return this._email;
   }
 
+  set email(value: string) {
+    this._email = value;
+  }
+
   get userToken(): string {
     return this._userToken;
+  }
+
+  set userToken(value: string) {
+    this._userToken = value;
   }
 
   get createdAt(): Date {

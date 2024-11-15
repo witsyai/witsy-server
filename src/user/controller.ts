@@ -24,9 +24,44 @@ export const createUser = async (db: Database, username: string, email: string, 
   }
 };
 
+  export const editUser = async (
+  db: Database,
+  userId: number,
+  email: string,
+  userToken: string,
+  subscriptionTier: UserTier,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  subscriptionExpiresAt: Date
+): Promise<void> => {
+  try {
+    const user = await getUserById(db, userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.email = email;
+    user.userToken = userToken;
+    user.subscriptionTier = subscriptionTier;
+    //user.subscriptionExpiresAt = subscriptionExpiresAt;
+
+    await saveUser(db, user);
+  } catch (error) {
+    logger.error('Error updating user', error);
+    throw new Error('Unknown error updating user', { cause: error });
+  }
+};
+
 export const getUserById = async (db: Database, id: number): Promise<User | null> => {
   const userData = await db.getDb()?.get('SELECT * FROM users WHERE id = ?', [id]);
   return userData ? User.fromDatabaseRow(userData) : null;
+}
+
+export const findUsers = async (db: Database, query: string): Promise<User[]> => {
+  const usersData = await db.getDb()?.all(
+    'SELECT * FROM users WHERE username LIKE ? OR email LIKE ?',
+    [`%${query}%`, `%${query}%`]
+  );
+  return usersData ? usersData.map(User.fromDatabaseRow) : [];
 }
 
 export const getUserByEmail = async (db: Database, email: string): Promise<User | null> => {
@@ -47,11 +82,11 @@ const saveUser = async (db: Database, user: User): Promise<void> => {
     const result = await db.getDb()?.run(
       `INSERT INTO users (
         username, email, user_token, created_at, last_login_at,
-        subscription_tier, subscription_expires_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        subscription_tier, subscription_expires_at, credits_left
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user.username, user.email, user.userToken, user.createdAt, user.lastLoginAt,
-        user.subscriptionTier, user.subscriptionExpiresAt
+        user.subscriptionTier, user.subscriptionExpiresAt, user.creditsLeft
       ]
     );
 
