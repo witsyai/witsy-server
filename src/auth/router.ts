@@ -36,4 +36,12 @@ router.post('/login', async (req: AuthedRequest, res: Response) => {
 
 });
 
+router.post('/admin/login', async (req: AuthedRequest, res: Response) => {
+  if (req.body.token === process.env.ADMIN_TOKEN) {
+    res.status(200).json({ sucesss: true });
+  } else {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 export default router;

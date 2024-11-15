@@ -9,6 +9,7 @@ import userRouter from './user/router';
 import threadRouter from './thread/router';
 import llmRouter from './llm/router';
 import voiceRouter from './voice/router';
+import usageRouter from './usage/router';
 import dotenv from 'dotenv';
 import Database from './utils/database';
 import { configurationMiddleware } from './utils/middlewares';
@@ -52,6 +53,7 @@ app.use('/user', userRouter);
 app.use('/thread', threadRouter);
 app.use('/llm', llmRouter);
 app.use('/voice', voiceRouter);
+app.use('/usage', usageRouter);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
