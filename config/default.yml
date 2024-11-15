@@ -1,4 +1,6 @@
 
+maintenance: false
+
 rateLimits:
   rpm:
     free: 10

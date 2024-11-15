@@ -1,10 +1,11 @@
 
 import { Router, Response } from 'express';
-import { userTokenMiddleware, databaseMiddleware, AuthedRequest } from '../utils/middlewares';
+import { userTokenMiddleware, databaseMiddleware, AuthedRequest, maintenanceMiddleware } from '../utils/middlewares';
 import { createThread, loadThread, saveThread } from './controller';
 import logger from '../utils/logger';
 
 const router = Router();
+router.use(maintenanceMiddleware);
 router.use(databaseMiddleware);
 router.use(userTokenMiddleware);
 

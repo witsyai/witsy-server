@@ -24,6 +24,15 @@ export const configurationMiddleware = (req: AuthedRequest, res: Response, next:
   next();
 };
 
+export const maintenanceMiddleware = (req: AuthedRequest, res: Response, next: NextFunction): void => {
+  if (req.configuration!.isUnderMaintenance) {
+    res.status(503).json({ error: 'Service is currently under maintenance' });
+    return;
+  } else {
+    next();
+  }
+}
+
 const compare = (token1: string|undefined, token2: string|undefined): boolean => {
   if (!token1 || !token2) return false;
   return timingSafeEqual(Buffer.from(token1), Buffer.from(token2));

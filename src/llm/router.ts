@@ -1,6 +1,6 @@
 
 import { Router, Response } from 'express';
-import { userTokenMiddleware, databaseMiddleware } from '../utils/middlewares';
+import { userTokenMiddleware, databaseMiddleware, maintenanceMiddleware } from '../utils/middlewares';
 import { engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment, Message } from 'multi-llm-ts';
@@ -9,6 +9,7 @@ import Controller from './controller';
 import logger from '../utils/logger';
 
 const router = Router();
+router.use(maintenanceMiddleware);
 router.use(userTokenMiddleware);
 router.use(databaseMiddleware);
 router.use(llmOptsMiddleware);

@@ -10,6 +10,7 @@ export interface EngineModel {
 }
 
 interface ConfiguratioData {
+  maintenance?: boolean
   log?: {
     level: string
   }
@@ -96,6 +97,10 @@ export default class Configuration {
       setLogLevel(this.data.log!.level)
     }
 
+  }
+
+  get isUnderMaintenance(): boolean {
+    return this.data.maintenance === true;
   }
 
   get rateLimitRpmFree(): number {
