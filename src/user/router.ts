@@ -22,6 +22,7 @@ router.get('/search', adminMiddleware, async (req: AuthedRequest, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      subscriptionTier: user.subscriptionTier,
     })));
 
   } catch (error) {
