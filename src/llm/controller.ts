@@ -179,11 +179,11 @@ export default {
 
     // we decide model switching here
     if (engineId === 'openai') {
-      llmOpts.models = [ { id: 'gpt-4o', name: '' } ]
+      llmOpts.models = [ { id: 'gpt-4o', name: '', meta: {} } ]
     } else if (engineId === 'anthropic') {
-      llmOpts.models = [ { id: 'claude-3-haiku-20240307', name: '' } ]
+      llmOpts.models = [ { id: 'claude-3-haiku-20240307', name: '', meta: {} } ]
     } else if (engineId === 'google') {
-      llmOpts.models = [ { id: 'gemini-1.5-flash-latest', name: '' } ]
+      llmOpts.models = [ { id: 'gemini-1.5-flash-latest', name: '', meta: {} } ]
     }
 
     // generate response from the engine
