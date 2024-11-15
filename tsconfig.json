@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "strict": true,
     "sourceMap": true,
     "esModuleInterop": true,
@@ -12,5 +12,9 @@
       "./node_modules/@types",
       "./src/@types"
     ]
-  }
+  },
+  "exclude": [
+    "dist/**/*",
+    "tests/**/*"
+  ]
 }
