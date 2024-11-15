@@ -46,5 +46,6 @@ chat:
     limit: 1
 
 image:
-  engine: huggingface
-  model: black-forest-labs/FLUX.1-schnell
+  model:
+    engine: huggingface
+    model: black-forest-labs/FLUX.1-schnell
