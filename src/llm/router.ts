@@ -166,7 +166,15 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
 
   } catch (e) {
     logger.error('Error in chat', e);
-    res.status(500).json({ error: 'Error in chat' });
+    try {
+      if (res.headersSent) {
+        res.write(JSON.stringify({ type: 'error', text: 'Error in chat', done: true }));
+      } else {
+        res.status(500).json({ error: 'Error in chat' });
+      }
+    } catch (f) {
+      logger.error('Could not notify error in chat', e, f);
+    }
   }
 
 });
