@@ -4,6 +4,24 @@ import Database from '../utils/database';
 import User from '../user';
 import Configuration from '../utils/config';
 
+// CREATE TABLE queries (
+//   id INTEGER PRIMARY KEY AUTOINCREMENT,
+//   user_id INT NOT NULL,
+//   thread_id TEXT NOT NULL,
+//   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+//   engine VARCHAR(255) NOT NULL,
+//   model VARCHAR(255) NOT NULL,
+//   message_count INTEGER NOT NULL,
+//   attachment_count INTEGER NOT NULL,
+//   input_tokens INTEGER NOT NULL,
+//   input_cached_tokens INTEGER NOT NULL,
+//   input_audio_tokens INTEGER NOT NULL,
+//   output_tokens INTEGER NOT NULL,
+//   output_audio_tokens INTEGER NOT NULL,
+//   cost_credits INTEGER NOT NULL,
+//   cost_cents INTEGER NOT NULL
+// );
+
 export const rateLimitRpmForUser = (configuration: Configuration, user: User): number => {
 
   switch (user.subscriptionTier) {
@@ -107,4 +125,28 @@ export const userTokensLast24Hours = async (db: Database, userId: number): Promi
   const after = Date.now() - 24 * 60 * 60 * 1000;
   const result = await db.getDb()?.get('SELECT SUM(input_tokens) + SUM(output_tokens) as tokens FROM queries WHERE user_id = ? AND created_at > ?', [userId, after]);
   return result.tokens;
+}
+
+// need sum of input_tokens and output_tokens for a user for last 7 days grouped by day
+export const userTokensLastDays = async (db: Database, userId: number, days: number = 7): Promise<{ date: string, inputTokens: number, outputTokens: number }[]> => {
+  const after = Date.now() - days * 24 * 60 * 60 * 1000;
+  const result = await db.getDb()?.all('SELECT DATE(ROUND(created_at/1000), "unixepoch") as day, SUM(input_tokens) as it, SUM(output_tokens) as ot FROM queries WHERE user_id = ? AND created_at > ? GROUP BY day ORDER BY day DESC', [userId, after]);
+  console.log(result);
+  return result?.map(r => ({ date: r.day, inputTokens: r.it, outputTokens: r.ot })) || [];
+}
+
+// top 10 users by usage in last 7 days
+export const topUsersLastDays = async (db: Database, days: number = 7, top: number = 10): Promise<{ id: number, username: string, subscriptionTier: string, inputTokens: number, outputTokens: number }[]> => {
+  const after = Date.now() - days * 24 * 60 * 60 * 1000;
+  const result = await db.getDb()?.all(`
+    SELECT u.id as user_id, u.username, u.subscription_tier as tier, SUM(q.input_tokens) as it, SUM(q.output_tokens) as ot
+    FROM queries q
+    JOIN users u ON q.user_id = u.id
+    WHERE q.created_at > ?
+    GROUP BY u.id, u.username
+    ORDER BY it + ot DESC
+    LIMIT ?
+  `, [after, top]);
+  console.log(result);
+  return result?.map(r => ({ id: r.user_id, username: r.username, subscriptionTier: r.tier, inputTokens: r.it, outputTokens: r.ot })) || [];
 }
