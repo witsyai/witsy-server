@@ -128,15 +128,39 @@ export const userTokensLast24Hours = async (db: Database, userId: number): Promi
 }
 
 // need sum of input_tokens and output_tokens for a user for last 7 days grouped by day
-export const userTokensLastDays = async (db: Database, userId: number, days: number = 7): Promise<{ date: string, inputTokens: number, outputTokens: number }[]> => {
+export const userTokensLastDays = async (db: Database, userId: number, days: number = 7): Promise<unknown[]> => {
+
   const after = Date.now() - days * 24 * 60 * 60 * 1000;
   const result = await db.getDb()?.all('SELECT DATE(ROUND(created_at/1000), "unixepoch") as day, SUM(input_tokens) as it, SUM(output_tokens) as ot FROM queries WHERE user_id = ? AND created_at > ? GROUP BY day ORDER BY day DESC', [userId, after]);
-  return result?.map(r => ({ date: r.day, inputTokens: r.it, outputTokens: r.ot })) || [];
+
+  const usages = [];
+  for (let i=0; i<days; i++) {
+    const date = new Date(after + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const usage = result?.find(r => r.day === date);
+    if (usage) {
+      usages.push({
+        date: date,
+        inputTokens: usage.it,
+        outputTokens: usage.ot,
+        totalTokens: usage.it + usage.ot
+      });
+    } else {
+      usages.push({
+        date: date,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0
+      });
+    }
+  }
+
+  return usages.reverse();
+
 }
 
-// top 10 users by usage in last 7 days
-export const topUsersLastDays = async (db: Database, days: number = 7, top: number = 10): Promise<{ id: number, username: string, subscriptionTier: string, inputTokens: number, outputTokens: number }[]> => {
-  const after = Date.now() - days * 24 * 60 * 60 * 1000;
+// top 10 users by usage in last hours
+export const topUsersLastHours = async (db: Database, hours: number, top: number = 10): Promise<unknown[]> => {
+  const after = Date.now() - hours * 60 * 60 * 1000;
   const result = await db.getDb()?.all(`
     SELECT u.id as user_id, u.username, u.subscription_tier as tier, SUM(q.input_tokens) as it, SUM(q.output_tokens) as ot
     FROM queries q
@@ -146,5 +170,70 @@ export const topUsersLastDays = async (db: Database, days: number = 7, top: numb
     ORDER BY it + ot DESC
     LIMIT ?
   `, [after, top]);
-  return result?.map(r => ({ id: r.user_id, username: r.username, subscriptionTier: r.tier, inputTokens: r.it, outputTokens: r.ot })) || [];
+  return result?.map(r => ({
+    id: r.user_id,
+    username: r.username,
+    subscriptionTier: r.tier,
+    inputTokens: r.it,
+    outputTokens: r.ot,
+    totalTokens: r.it + r.ot,
+    dailyAverage: Math.round((r.it + r.ot) / (hours/24))
+  })) || [];
+}
+
+// provide total tokens over last hours. whatever the number of hours we provide numMeasures values total  
+export const totalTokensLastHours = async (db: Database, hours: number = 24): Promise<unknown[]> => {
+  
+  // needed
+  const numMeasures = 20;
+  const after = Date.now() - hours * 60 * 60 * 1000;
+
+  const bounds = await db.getDb()?.get(`
+    SELECT MIN(created_at) as min, MAX(created_at)-MIN(created_at) as size
+    FROM queries
+    WHERE created_at > ?`,
+    [after]);
+
+  // we are mapping the min(created_at):max(created_at) interval to 0:99
+  // 1st line is: created_at - min / ((max-min) / 100)
+  
+  const result = await db.getDb()?.all(`
+    SELECT FLOOR((created_at - ?) / (? / ?)) as instant,
+    SUM(input_tokens) as it, SUM(output_tokens) as ot
+    FROM queries
+    WHERE created_at > ?
+    GROUP BY instant
+    ORDER BY instant
+    LIMIT 100
+  `, [bounds.min, bounds.size, numMeasures, after]);
+  
+  // now we need to build a final array with 100 values even there is no data
+  const usages = [];
+  for (let i=0; i<numMeasures; i++) {
+    // first we need to date in string
+    const instant = bounds.min + i * bounds.size / numMeasures;
+    const date = new Date(instant).toISOString();
+
+    // then we need to find the value
+    const usage = result?.find(r => r.instant === i);
+    if (usage) {
+      usages.push({
+        date: date,
+        inputTokens: usage.it,
+        outputTokens: usage.ot,
+        totalTokens: usage.it + usage.ot
+      });
+    } else {
+      usages.push({
+        date: date,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0
+      });
+    }
+  }
+
+  // done
+  return usages;
+
 }
