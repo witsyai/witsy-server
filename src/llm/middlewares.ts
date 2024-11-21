@@ -3,10 +3,11 @@ import { Response, NextFunction } from 'express';
 import { Message } from 'multi-llm-ts';
 import { AuthedRequest } from '../utils/middlewares';
 import { LlmOpts } from './controller';
-import * as usageController from '../usage/controller';
 import logger from '../utils/logger';
+import * as usageController from '../usage/controller';
 
 export interface LlmRequest extends AuthedRequest {
+  canPrompt?: boolean
   llmOpts?: LlmOpts
   engineId?: string
   modelId?: string
@@ -41,6 +42,32 @@ export const llmOptsMiddleware = (req: LlmRequest, res: Response, next: NextFunc
     }
   }
   next();
+};
+
+export const canPromptMiddleware = (req: LlmRequest, res: Response, next: NextFunction): void => {
+
+  // default to false
+  req.canPrompt = false;
+
+  // need a user and a valud subscription tier
+  if (!req.user || !req.user!.subscriptionTier || req.user!.subscriptionTier === 'free') {
+    logger.warn(`chat denied: user not found or invalid subscription tier`);
+    next();
+    return;
+  }
+
+  // check expiration date
+  const now = Date.now();
+  if (!req.user!.subscriptionExpiresAt || req.user!.subscriptionExpiresAt < now) {
+    logger.warn(`chat denied: subscription expired: ${req.user!.subscriptionExpiresAt} vs ${now}`);
+    next();
+    return;
+  }
+
+  // seems ok
+  req.canPrompt = true;
+  next();
+
 };
 
 // middleware to add engine/model options to the request

@@ -1,12 +1,28 @@
 
 import { Router, Response } from 'express';
 import { databaseMiddleware, AuthedRequest } from '../utils/middlewares';
-import { getUserByEmail } from '../user/controller';
+import { createUser, getUserByEmail } from '../user/controller';
+import logger from '../utils/logger';
 
 const router = Router();
 router.use(databaseMiddleware);
 
-// to create a new thread
+router.post('/register', async (req: AuthedRequest, res) => {
+  try {
+
+    // do it
+    const user = await createUser(req.db!);
+    res.status(200).json({
+      userToken: user.userToken,
+    });
+  } catch (error) {
+    logger.error(`user creation failed: ${error}`);
+    const errorMessage = (error instanceof Error && error.cause) ? error.cause : 'Unknown error';
+    res.status(400).json({ error: errorMessage });
+  }
+});
+
+
 router.post('/verify', async (req: AuthedRequest, res: Response) => {
   const userToken = req.userToken || req.body.userToken || req.body.clientId;
   const isValid = await req.db!.isValidUserToken(userToken);

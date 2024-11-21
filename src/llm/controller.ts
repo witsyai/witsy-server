@@ -48,8 +48,8 @@ const messagesPayload = (
 
     // prep all
     const message = thread[i];
-    const attach = includeAttachments && attachmentCount < chatMaxAttachments && message.attachment != null && message.attachment.contents?.length;
-    const attachment = attach ? new Attachment(message.attachment!.contents, message.attachment!.mimeType) : undefined;
+    const attach = includeAttachments && attachmentCount < chatMaxAttachments && message.attachment != null && message.attachment.content?.length;
+    const attachment = attach ? new Attachment(message.attachment!.content, message.attachment!.mimeType) : undefined;
     const payload = new Message(message.role, message.content, attachment);
     messages.push(payload);
 
