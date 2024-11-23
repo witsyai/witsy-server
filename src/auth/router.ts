@@ -46,6 +46,8 @@ router.post('/login', async (req: AuthedRequest, res: Response) => {
   // return the user token
   res.json({
     userToken: user.userToken,
+    subscriptionTier: user.subscriptionTier,
+    subscriptionExpiresAt: user.subscriptionExpiresAt,
     // temp backwards compatibility
     clientId: user.userToken
   });
