@@ -128,10 +128,10 @@ export const userTokensLast24Hours = async (db: Database, userId: number): Promi
 }
 
 // need sum of input_tokens and output_tokens for a user for last 7 days grouped by day
-export const userTokensLastDays = async (db: Database, userId: number, days: number = 7): Promise<unknown[]> => {
+export const userUsageLastDays = async (db: Database, userId: number, days: number = 7): Promise<unknown[]> => {
 
   const after = Date.now() - days * 24 * 60 * 60 * 1000;
-  const result = await db.getDb()?.all('SELECT DATE(ROUND(created_at/1000), "unixepoch") as day, SUM(input_tokens) as it, SUM(output_tokens) as ot FROM queries WHERE user_id = ? AND created_at > ? GROUP BY day ORDER BY day DESC', [userId, after]);
+  const result = await db.getDb()?.all('SELECT DATE(ROUND(created_at/1000), "unixepoch") as day, COUNT(DISTINCT id) as queries, COUNT(DISTINCT thread_id) as threads, SUM(input_tokens) as it, SUM(output_tokens) as ot FROM queries WHERE user_id = ? AND created_at > ? GROUP BY day ORDER BY day DESC', [userId, after]);
 
   const usages = [];
   for (let i=0; i<days; i++) {
@@ -140,6 +140,8 @@ export const userTokensLastDays = async (db: Database, userId: number, days: num
     if (usage) {
       usages.push({
         date: date,
+        queries: usage.queries,
+        threads: usage.threads,
         inputTokens: usage.it,
         outputTokens: usage.ot,
         totalTokens: usage.it + usage.ot
@@ -147,6 +149,8 @@ export const userTokensLastDays = async (db: Database, userId: number, days: num
     } else {
       usages.push({
         date: date,
+        queries: 0,
+        threads: 0,
         inputTokens: 0,
         outputTokens: 0,
         totalTokens: 0

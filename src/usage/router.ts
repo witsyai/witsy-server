@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { adminMiddleware, databaseMiddleware, type AuthedRequest } from '../utils/middlewares';
-import { topUsersLastHours, totalTokensLastHours, userTokensLastDays } from './controller';
+import { topUsersLastHours, totalTokensLastHours, userUsageLastDays } from './controller';
 import logger from '../utils/logger';
 
 const router = Router();
@@ -28,7 +28,7 @@ router.get('/users/top/:hours/:top?', async (req: AuthedRequest, res) => {
 
 router.get('/users/:userId', async (req: AuthedRequest, res) => {
   try {
-    res.status(200).json({ usage: await userTokensLastDays(req.db!, parseInt(req.params.userId)) });
+    res.status(200).json({ usage: await userUsageLastDays(req.db!, parseInt(req.params.userId)) });
   } catch (e) {
     logger.error('Error while getting user usage', e);
     res.status(500).json({ error: e });
