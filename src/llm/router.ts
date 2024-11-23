@@ -1,7 +1,7 @@
 
 import { Router, Response } from 'express';
 import { userTokenMiddleware, databaseMiddleware, maintenanceMiddleware } from '../utils/middlewares';
-import { engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
+import { canPromptMiddleware, engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment, Message } from 'multi-llm-ts';
 import { saveUserQuery } from '../usage/controller';
@@ -49,7 +49,14 @@ router.post('/models/:engine', llmOptsMiddleware, async (req: LlmRequest, res: R
 });
 
 // to chat in the thread
-router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: LlmRequest, res: Response) => {
+router.post('/chat', canPromptMiddleware, rateLimitMiddleware, engineModelMiddleware, async (req: LlmRequest, res: Response) => {
+  
+  // needs to be able to chat
+  if (!req.canPrompt) {
+    logger.warn('chat denied: invalid or expired subscription');
+    res.status(402).json({ error: 'Invalid or expired subscription' });
+    return;
+  }
   
   // load params
   const { prompt, attachment: attachInfo } = req.body;
@@ -61,11 +68,11 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
   // check attachInfo
   let attachment: Attachment|null = null;
   if (attachInfo) {
-     if (attachInfo.mimeType == null || attachInfo.contents == null) {
-      res.status(400).json({ error: 'attachment.mimeType and attachment.contents required' });
+     if (attachInfo.mimeType == null || attachInfo.content == null) {
+      res.status(400).json({ error: 'attachment.mimeType and attachment.content required' });
       return;
     }
-    attachment = new Attachment(attachInfo.contents, attachInfo.mimeType);
+    attachment = new Attachment(attachInfo.content, attachInfo.mimeType);
   }
 
   // load thread or messages
@@ -180,7 +187,16 @@ router.post('/chat', rateLimitMiddleware, engineModelMiddleware, async (req: Llm
 });
 
 // to chat in the thread
-router.post('/title', engineModelMiddleware, engineMessagesMiddleware, async (req: LlmRequest, res: Response) => {
+router.post('/title', canPromptMiddleware, engineModelMiddleware, engineMessagesMiddleware, async (req: LlmRequest, res: Response) => {
+
+  // needs to be able to chat
+  if (!req.canPrompt) {
+    logger.warn('chat denied: invalid or expired subscription');
+    res.status(402).json({ error: 'Invalid or expired subscription' });
+    return;
+  }
+  
+  
   try {
     const title = await Controller.title(req.configuration!, req.engineId!, req.modelId!, req.messages!, req.llmOpts!);
     res.json({ title: title });

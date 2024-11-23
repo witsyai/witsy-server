@@ -2,19 +2,34 @@ import User, { UserTier } from './index';
 import Database from '../utils/database';
 import logger from '../utils/logger';
 
-export const createUser = async (db: Database, username: string, email: string, tier: UserTier): Promise<User> => {
+export const createUser = async (db: Database, username?: string, email?: string, tier?: string): Promise<User> => {
   try {
     // check if username or email is already taken
-    const existingUser = await db.getDb()?.get(
-      'SELECT * FROM users WHERE username = ? OR email = ?',
-      [username, email]
-    );
-    if (existingUser) {
-      throw new Error('Username or email is already taken');
+    if (username || email) {
+      const existingUser = await db.getDb()?.get(
+        'SELECT * FROM users WHERE username = ? OR email = ?',
+        [username, email]
+      );
+      if (existingUser) {
+        throw new Error('Username or email is already taken');
+      }
     }
 
-    // we can save
-    const user = new User(0, username, email, tier);
+    // create blank
+    const user = new User(0);
+
+    // update with provided values
+    if (username) {
+      user.username = username;
+    }
+    if (email) {
+      user.email = email;
+    }
+    if (tier) {
+      user.subscriptionTier = UserTier[tier as keyof typeof UserTier];
+    }
+
+    // save and done
     await saveUser(db, user);
     return user;
 
@@ -24,7 +39,7 @@ export const createUser = async (db: Database, username: string, email: string, 
   }
 };
 
-  export const editUser = async (
+export const editUser = async (
   db: Database,
   userId: number,
   email: string,
@@ -74,7 +89,12 @@ export const getUserByToken = async (db: Database, userToken: string): Promise<U
   return userData ? User.fromDatabaseRow(userData) : null;
 }
 
-const saveUser = async (db: Database, user: User): Promise<void> => {
+export const getUserBySubscriptionId = async (db: Database, subscriptionId: string): Promise<User | null> => {
+  const userData = await db.getDb()?.get('SELECT * FROM users WHERE subscription_id = ?', [subscriptionId]);
+  return userData ? User.fromDatabaseRow(userData) : null;
+}
+
+export const saveUser = async (db: Database, user: User): Promise<void> => {
 
   // insert or update?
   if (user.id === 0) {
@@ -82,11 +102,13 @@ const saveUser = async (db: Database, user: User): Promise<void> => {
     const result = await db.getDb()?.run(
       `INSERT INTO users (
         username, email, user_token, created_at, last_login_at,
-        subscription_tier, subscription_expires_at, credits_left
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        subscription_id, subscription_tier, subscription_started_at,
+        subscription_expires_at, subscription_last_payload, credits_left
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user.username, user.email, user.userToken, user.createdAt, user.lastLoginAt,
-        user.subscriptionTier, user.subscriptionExpiresAt, user.creditsLeft
+        user.subscriptionId, user.subscriptionTier, user.subscriptionStartedAt, 
+        user.subscriptionExpiresAt, user.subscriptionLastPayload, user.creditsLeft
       ]
     );
 
@@ -107,14 +129,18 @@ const saveUser = async (db: Database, user: User): Promise<void> => {
         user_token = ?,
         created_at = ?,
         last_login_at = ?,
+        subscription_id = ?,
         subscription_tier = ?,
+        subscription_started_at = ?,
         subscription_expires_at = ?,
+        subscription_last_payload = ?,
         credits_left = ?
       WHERE
         id = ?`,
       [
         user.username, user.email, user.userToken, user.createdAt, user.lastLoginAt,
-        user.subscriptionTier, user.subscriptionExpiresAt, user.creditsLeft, user.id
+        user.subscriptionId, user.subscriptionTier, user.subscriptionStartedAt,
+        user.subscriptionExpiresAt, JSON.stringify(user.subscriptionLastPayload), user.creditsLeft, user.id
       ]
     );
   }

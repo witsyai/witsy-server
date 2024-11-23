@@ -71,7 +71,7 @@ test('build the messages with no limits', async () => {
     { role: 'system', content: 'instructions', attachment: null, transient: false },
     { role: 'user', content: 'prompt1', attachment: null, transient: false },
     { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: { contents: 'image', mimeType: 'image/png' }, transient: false },
+    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, transient: false },
     { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
   ]);
 
@@ -89,9 +89,9 @@ test('build the messages with no limits', async () => {
     { role: 'system', content: 'instructions', attachment: null, transient: false },
     { role: 'user', content: 'prompt1', attachment: null, transient: false },
     { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: { contents: 'image', mimeType: 'image/png' }, transient: false },
+    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, transient: false },
     { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: { contents: 'text', mimeType: 'text/plain' }, transient: false },
+    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, transient: false },
     { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
   ]);
 
@@ -100,9 +100,9 @@ test('build the messages with no limits', async () => {
     { role: 'system', content: 'instructions', attachment: null, transient: false },
     { role: 'user', content: 'prompt1', attachment: null, transient: false },
     { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: { contents: 'image', mimeType: 'image/png' }, transient: false },
+    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, transient: false },
     { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: { contents: 'text', mimeType: 'text/plain' }, transient: false },
+    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, transient: false },
     { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
   ]);
 
@@ -128,7 +128,7 @@ test('build the messages with limit attachments', async () => {
     { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
     { role: 'user', content: 'prompt2', attachment: null, transient: false },
     { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: { contents: 'text', mimeType: 'text/plain' }, transient: false },
+    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, transient: false },
     { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
   ]);
 

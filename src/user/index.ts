@@ -12,34 +12,45 @@ export const isValidUserTier = (tier: string): boolean => {
 
 export default class User {
   private _id: number;
-  private _username: string;
-  private _email: string;
   private _userToken: string;
+  private _username: string | null;
+  private _email: string | null;
   private _createdAt: Date;
   private _lastLoginAt: Date;
+  private _subscriptionId: string | null;
   private _subscriptionTier: UserTier;
-  private _subscriptionExpiresAt: Date | null;
+  private _subscriptionStartedAt: number | null;
+  private _subscriptionExpiresAt: number | null;
+  private _subscriptionLastPayload: object | null;
   private _creditsLeft: number;
 
-  constructor(id: number, username: string, email: string, tier: UserTier) {
+  constructor(id: number) {
     this._id = id;
-    this._username = username;
-    this._email = email;
     this._userToken = crypto.randomUUID();
+    this._username = null;
+    this._email = null;
     this._createdAt = new Date();
     this._lastLoginAt = new Date();
-    this._subscriptionTier = tier;
+    this._subscriptionId = null;
+    this._subscriptionTier = UserTier.Free;
+    this._subscriptionStartedAt = null;
     this._subscriptionExpiresAt = null;
+    this._subscriptionLastPayload = null;
     this._creditsLeft = 0;
   }
 
   static fromDatabaseRow(row: any): User {
-    const user = new User(row.id, row.username, row.email, row.subscription_tier);
+    const user = new User(row.id);
     user._userToken = row.user_token;
+    user._username = row.username;
+    user._email = row.email;
     user._createdAt = new Date(row.created_at);
     user._lastLoginAt = new Date(row.last_login_at);
+    user._subscriptionId = row.subscription_id;
     user._subscriptionTier = row.subscription_tier;
-    user._subscriptionExpiresAt = row.subscription_expires_at ? new Date(row.subscription_expires_at) : null;
+    user._subscriptionStartedAt = row.subscription_started_at;
+    user._subscriptionExpiresAt = row.subscription_expires_at;
+    user._subscriptionLastPayload = row.subscription_last_payload ? JSON.parse(row.subscription_last_payload) : null;
     user._creditsLeft = row.credits_left
     return user;
   }
@@ -55,11 +66,15 @@ export default class User {
     this._id = value;
   }
 
-  get username(): string {
+  get username(): string | null {
     return this._username;
   }
 
-  get email(): string {
+  set username(value: string) {
+    this._username = value;
+  }
+
+  get email(): string | null {
     return this._email;
   }
 
@@ -87,6 +102,14 @@ export default class User {
     this._lastLoginAt = value;
   }
 
+  get subscriptionId(): string | null {
+    return this._subscriptionId;
+  }
+
+  set subscriptionId(value: string | null) {
+    this._subscriptionId = value;
+  }
+
   get subscriptionTier(): UserTier {
     return this._subscriptionTier;
   }
@@ -95,12 +118,28 @@ export default class User {
     this._subscriptionTier = value;
   }
 
-  get subscriptionExpiresAt(): Date | null {
+  get subscriptionStartedAt(): number | null {
+    return this._subscriptionStartedAt;
+  }
+
+  set subscriptionStartedAt(value: number | null) {
+    this._subscriptionStartedAt = value;
+  }
+  
+  get subscriptionExpiresAt(): number | null {
     return this._subscriptionExpiresAt;
   }
 
-  set subscriptionExpiresAt(value: Date | null) {
+  set subscriptionExpiresAt(value: number | null) {
     this._subscriptionExpiresAt = value;
+  }
+
+  get subscriptionLastPayload(): object | null {
+    return this._subscriptionLastPayload;
+  }
+
+  set subscriptionLastPayload(value: object | null) {
+    this._subscriptionLastPayload = value;
   }
 
   get creditsLeft(): number {
