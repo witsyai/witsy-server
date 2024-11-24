@@ -5,6 +5,7 @@ import { canPromptMiddleware, engineMessagesMiddleware, engineModelMiddleware, l
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment, Message } from 'multi-llm-ts';
 import { saveUserQuery } from '../usage/controller';
+import { deleteImage } from '../utils/data';
 import Controller from './controller';
 import logger from '../utils/logger';
 
@@ -205,5 +206,17 @@ router.post('/title', canPromptMiddleware, engineModelMiddleware, engineMessages
     res.status(500).json({ error: 'Error in title' });
   }
 });
+
+router.delete('/image/:filename', async (req: LlmRequest, res: Response) => {
+
+  try {
+    await deleteImage(req.params.filename);
+    res.json({ success: true });
+  } catch (e) {
+    logger.error('Error in deleteImage', e);
+    res.status(500).json({ error: 'Error in deleteImage' });
+  }
+
+})
 
 export default router;

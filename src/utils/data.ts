@@ -2,6 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
+export const getFilePath = (folder: string, filename: string): string => {
+  return path.join('data', folder, filename);
+}
+
+export const deleteImage = (filename: string): void => {
+  fs.unlinkSync(getFilePath('images', filename));
+}
+
 export const saveFile = (folder: string, extension: string, content: Buffer): string => {
 
   // create a new file in the data directory
