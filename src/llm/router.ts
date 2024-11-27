@@ -4,7 +4,7 @@ import { userTokenMiddleware, databaseMiddleware, maintenanceMiddleware } from '
 import { canPromptMiddleware, engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
 import { loadThread, saveThread } from '../thread/controller';
 import { Attachment } from 'multi-llm-ts';
-import { saveUserQuery } from '../usage/controller';
+import { imageCountLastMonth, imageLimitForUser, saveUserQuery } from '../usage/controller';
 import { deleteImage } from '../utils/data';
 import Controller from './controller';
 import Message from '../models/message';
@@ -107,6 +107,12 @@ router.post('/chat', canPromptMiddleware, rateLimitMiddleware, engineModelMiddle
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // check if user can create images
+    const imagesLastMonth = await imageCountLastMonth(req.db!, req.user!.id);
+    const imagesLimit = imageLimitForUser(req.configuration!, req.user!);
+    //console.log('imagesLastMonth', imagesLastMonth, 'imagesLimit', imagesLimit);
+    const canImage = imagesLimit === 0 || imagesLastMonth <= imagesLimit;
+
     // now prompt
     let lastSent = null;
     const minDelayMs = 5;
@@ -114,7 +120,8 @@ router.post('/chat', canPromptMiddleware, rateLimitMiddleware, engineModelMiddle
       req.configuration!, req.engineId!, req.modelId!,
       thread ? thread.messages : userMessages, prompt, attachment, {
       llmOpts: req.llmOpts!,
-      baseUrl: `${req.protocol}://${req.get('host')}`
+      baseUrl: `${req.protocol}://${req.get('host')}`,
+      canImage: canImage,
     })
     for await (const message of stream) {
 

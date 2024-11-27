@@ -26,6 +26,13 @@ interface ConfiguratioData {
       pro: number,
     }
   }
+  otherLimits?: {
+    imagesPerMonth: {
+      free: number,
+      basic: number,
+      pro: number,
+    }
+  }
   models?: {
     basic: [ EngineModel ]
     pro: [ EngineModel ]
@@ -125,6 +132,18 @@ export default class Configuration {
 
   get rateLimitTokens24hPro(): number {
     return this.data.rateLimits!.tokens24h.pro;
+  }
+
+  get imageLimitFree(): number {
+    return this.data.otherLimits!.imagesPerMonth.free;
+  }
+
+  get imageLimitBasic(): number {
+    return this.data.otherLimits!.imagesPerMonth.basic;
+  }
+
+  get imageLimitPro(): number {
+    return this.data.otherLimits!.imagesPerMonth.pro;
   }
 
   get modelsBasic(): [ EngineModel ] {

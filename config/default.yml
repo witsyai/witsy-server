@@ -13,6 +13,13 @@ rateLimits:
     pro: 50000
     unlimited: 0
 
+otherLimits:
+  imagesPerMonth:
+    free: 5
+    basic: 100
+    pro: 200
+    unlimited: 0
+    
 models:
   basic:
     - engine: openai

@@ -17,6 +17,7 @@ export interface LlmOpts {
 export interface ChatOpts {
   llmOpts: LlmOpts
   baseUrl: string
+  canImage: boolean
 }
 
 const _instructions = 'You are a helpful AI assistant. You provide clear, informative, concise, and relevant responses.'
@@ -161,7 +162,7 @@ export default {
 
     // image plugin
     const imageModel: EngineModel|undefined = configuration.imageModel;
-    if (imageModel) {
+    if (chatOpts.canImage && imageModel) {
       engine.addPlugin(new ImagePlugin(chatOpts.baseUrl, imageModel.engine, imageModel.model));
     }
 

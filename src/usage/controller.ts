@@ -14,6 +14,8 @@ import Message from '../models/message';
 //   model VARCHAR(255) NOT NULL,
 //   message_count INTEGER NOT NULL,
 //   attachment_count INTEGER NOT NULL,
+//   internet_search_count INTEGER NOT NULL,
+//   image_generation_count INTEGER NOT NULL,
 //   input_tokens INTEGER NOT NULL,
 //   input_cached_tokens INTEGER NOT NULL,
 //   input_audio_tokens INTEGER NOT NULL,
@@ -32,6 +34,23 @@ export const rateLimitRpmForUser = (configuration: Configuration, user: User): n
       return configuration.rateLimitRpmBasic;
     case 'pro':
       return configuration.rateLimitRpmPro;
+    case 'unlimited':
+      return 0;
+    default:
+      throw new Error('Invalid subscription tier');
+  }
+
+};
+
+export const imageLimitForUser = (configuration: Configuration, user: User): number => {
+
+  switch (user.subscriptionTier) {
+    case 'free':
+      return configuration.imageLimitFree;
+    case 'basic':
+      return configuration.imageLimitBasic;
+    case 'pro':
+      return configuration.imageLimitPro;
     case 'unlimited':
       return 0;
     default:
@@ -246,4 +265,11 @@ export const totalTokensLastHours = async (db: Database, hours: number = 24): Pr
   // done
   return usages;
 
+}
+
+// number of images generated for one user in last month
+export const imageCountLastMonth = async (db: Database, userId: number): Promise<number> => {
+  const after = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const result = await db.getDb()?.get('SELECT SUM(image_generation_count) as count FROM queries WHERE user_id = ? AND created_at > ?', [userId, after]);
+  return result.count;
 }
