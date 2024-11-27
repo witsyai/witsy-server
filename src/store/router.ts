@@ -23,12 +23,14 @@ router.post('/verify/apple', async (req: Request, res: Response) => {
   }
   
   appleReceiptVerify.config({
-    verbose: true,
+    //verbose: true,
     extended: true,
     ignoreExpiredError: true,
     excludeOldTransactions: true,
     secret: process.env.APPLE_SHARED_SECRET,
-    environment: [ process.env.NODE_ENV == 'production' ? 'production' : 'sandbox' ],
+    environment: process.env.NODE_ENV == 'production' ?
+      [ 'production', 'sandbox' ] :
+      [ 'sandbox', 'production' ]
   });
 
   try {
