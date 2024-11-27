@@ -1,10 +1,10 @@
 
 import { Response, NextFunction } from 'express';
-import { Message } from 'multi-llm-ts';
 import { AuthedRequest } from '../utils/middlewares';
 import { LlmOpts } from './controller';
 import logger from '../utils/logger';
 import * as usageController from '../usage/controller';
+import Message from '../models/message';
 
 export interface LlmRequest extends AuthedRequest {
   canPrompt?: boolean

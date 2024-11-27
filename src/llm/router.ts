@@ -3,10 +3,11 @@ import { Router, Response } from 'express';
 import { userTokenMiddleware, databaseMiddleware, maintenanceMiddleware } from '../utils/middlewares';
 import { canPromptMiddleware, engineMessagesMiddleware, engineModelMiddleware, llmOptsMiddleware, LlmRequest, rateLimitMiddleware } from './middlewares';
 import { loadThread, saveThread } from '../thread/controller';
-import { Attachment, Message } from 'multi-llm-ts';
+import { Attachment } from 'multi-llm-ts';
 import { saveUserQuery } from '../usage/controller';
 import { deleteImage } from '../utils/data';
 import Controller from './controller';
+import Message from '../models/message';
 import logger from '../utils/logger';
 
 const router = Router();
@@ -123,6 +124,11 @@ router.post('/chat', canPromptMiddleware, rateLimitMiddleware, engineModelMiddle
           'Content-Type': 'application/json',
           'Transfer-Encoding': 'chunked'
         });
+      }
+
+      // tool calls
+      if (message.type === 'tool') {
+        llmMessage.addToolCall(message);
       }
 
       // throttling for nginx

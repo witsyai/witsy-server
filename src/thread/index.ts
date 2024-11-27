@@ -1,5 +1,5 @@
 
-import { Message } from 'multi-llm-ts';
+import Message from '../models/message';
 
 export default class Thread {
 

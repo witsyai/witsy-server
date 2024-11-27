@@ -1,11 +1,12 @@
 
-import { Attachment, igniteEngine, LlmChunk, LlmCompletionOpts, loadModels, Message, ModelsList } from 'multi-llm-ts';
+import { Attachment, igniteEngine, LlmChunk, LlmCompletionOpts, loadModels, ModelsList } from 'multi-llm-ts';
 import BrowsePlugin from '../plugins/browse';
 import TavilyPlugin from '../plugins/tavily';
 import ImagePlugin from '../plugins/image';
 import PythonPlugin from '../plugins/python';
 import YouTubePlugin from '../plugins/youtube';
 import Configuration, { EngineModel } from '../utils/config';
+import Message from '../models/message';
 import { UserTier } from '../user';
 
 export interface LlmOpts {

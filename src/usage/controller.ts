@@ -1,8 +1,9 @@
 
-import { LlmUsage, Message } from 'multi-llm-ts';
+import { LlmUsage } from 'multi-llm-ts';
 import Database from '../utils/database';
 import User from '../user';
 import Configuration from '../utils/config';
+import Message from '../models/message';
 
 // CREATE TABLE queries (
 //   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +77,11 @@ export const saveUserQuery = async (
   const outputTokens = usage.completion_tokens;
   const outputAudioTokens = usage.completion_tokens_details?.audio_tokens || 0;
 
+  // count tool calls
+  const lastMessage = messages[messages.length - 1];
+  const internetSearches = lastMessage.toolCalls.filter(tc => tc.name === 'search_tavily').length;
+  const imageGenerations = lastMessage.toolCalls.filter(tc => tc.name === 'image_generation').length;
+
   // calculate costs
   const costCredits = 0;
   const costCents = 0;
@@ -84,13 +90,13 @@ export const saveUserQuery = async (
   await db.getDb()?.run(
     `INSERT INTO queries(
         user_id, thread_id, created_at, engine, model,
-        message_count, attachment_count,
+        message_count, attachment_count, internet_search_count, image_generation_count,
         input_tokens, input_cached_tokens, input_audio_tokens, output_tokens, output_audio_tokens,
         cost_credits, cost_cents
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user.id, threadId, new Date(), engine, model,
-        messages.length, attachmentsCount,
+        messages.length, attachmentsCount, internetSearches, imageGenerations,
         inputTokens, inputCachedTokens, inputAudioTokens, outputTokens, outputAudioTokens,
         costCredits, costCents
       ]
