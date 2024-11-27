@@ -56,65 +56,65 @@ test('build the messages with no limits', async () => {
 
   let messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread0, false, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread2, false, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread4, false, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread4, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread6, false, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread6, true, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: { content: 'image', mimeType: 'image/png' }, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cUnlimited as Configuration, 'instructions', thread6, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
   ]);
 
 });
@@ -123,24 +123,24 @@ test('build the messages with limit attachments', async () => {
 
   let messages = messagesPayload(cLimitAttachments as Configuration, 'instructions', thread6, false, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: { content: 'text', mimeType: 'text/plain' }, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cLimitAttachments as Configuration, 'instructions', thread6, true, true);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
   ]);
 
 });
@@ -149,41 +149,41 @@ test('build the messages with both limits', async () => {
 
   let messages = messagesPayload(cLimitBoth as Configuration, 'instructions', thread0, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cLimitBoth as Configuration, 'instructions', thread2, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cLimitBoth as Configuration, 'instructions', thread4, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt1', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse1', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt1', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse1', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cLimitBoth as Configuration, 'instructions', thread6, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt2', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse2', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt2', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse2', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
   ]);
 
   messages = messagesPayload(cLimitBoth as Configuration, 'instructions', thread8, false, false);
   expect(JSON.parse(JSON.stringify(messages))).toStrictEqual([
-    { role: 'system', content: 'instructions', attachment: null, transient: false },
-    { role: 'user', content: 'prompt3', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse3', attachment: null, transient: false },
-    { role: 'user', content: 'prompt4', attachment: null, transient: false },
-    { role: 'assistant', content: 'reponse4', attachment: null, transient: false },
+    { role: 'system', content: 'instructions', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt3', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse3', attachment: null, toolCalls: [], transient: false },
+    { role: 'user', content: 'prompt4', attachment: null, toolCalls: [], transient: false },
+    { role: 'assistant', content: 'reponse4', attachment: null, toolCalls: [], transient: false },
   ]);
 
 });
