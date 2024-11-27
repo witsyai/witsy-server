@@ -23,7 +23,7 @@ router.post('/verify/apple', async (req: Request, res: Response) => {
   }
   
   appleReceiptVerify.config({
-    //verbose: true,
+    verbose: true,
     extended: true,
     ignoreExpiredError: true,
     excludeOldTransactions: true,
