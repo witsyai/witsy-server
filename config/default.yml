@@ -49,5 +49,5 @@ chat:
 
 image:
   model:
-    engine: huggingface
-    model: black-forest-labs/FLUX.1-schnell
+    engine: replicate
+    model: black-forest-labs/flux-schnell

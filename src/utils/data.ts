@@ -6,6 +6,11 @@ export const getFilePath = (folder: string, filename: string): string => {
   return path.join('data', folder, filename);
 }
 
+export const getRandomFilePath = (folder: string, extension: string): string => {
+  fs.mkdirSync(path.join('data', folder), { recursive: true });
+  return path.join(folder, `${crypto.randomUUID()}.${extension}`);
+}
+
 export const deleteImage = (filename: string): void => {
   fs.unlinkSync(getFilePath('images', filename));
 }
@@ -13,14 +18,13 @@ export const deleteImage = (filename: string): void => {
 export const saveFile = (folder: string, extension: string, content: Buffer): string => {
 
   // create a new file in the data directory
-  const fileName = path.join(folder, `${crypto.randomUUID()}.${extension}`);
+  const filePath = getRandomFilePath(folder, extension);
 
   // now write the file
-  fs.mkdirSync(path.join('data', folder), { recursive: true });
-  fs.writeFileSync(path.join('data', fileName), content);
+  fs.writeFileSync(path.join('data', filePath), content);
 
   // return the file name
-  return `/${fileName.replace(/\\/g, '/')}`;
+  return `/${filePath.replace(/\\/g, '/')}`;
 
 }
 

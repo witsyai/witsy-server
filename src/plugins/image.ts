@@ -1,7 +1,8 @@
 
 import { Plugin, PluginParameter } from 'multi-llm-ts';
-import { HfInference } from '@huggingface/inference'
 import { saveFile, saveFile64 } from '../utils/data';
+import { HfInference } from '@huggingface/inference'
+import Replicate, { FileOutput } from 'replicate';
 import OpenAI from 'openai'
 
 export default class extends Plugin {
@@ -130,6 +131,8 @@ export default class extends Plugin {
         return this.openai(parameters)
       } else if (this.engine == 'huggingface') {
         return this.huggingface(parameters)
+      } else if (this.engine == 'replicate') {
+        return this.replicate(parameters)
       } else {
         throw new Error('Unsupported engine')
       }
@@ -200,7 +203,35 @@ export default class extends Plugin {
       description: parameters?.prompt
     }
 
-  }  
+  }
+
+  async replicate(parameters: any): Promise<any> {
+
+    // init
+    const client = new Replicate({ auth: process.env.REPLICATE_API_KEY }); 
+
+    // call
+    console.log(`[replicate] prompting model ${this.model}`)
+    const output: FileOutput[] = await client.run(this.model as `${string}/${string}`, {
+      input: {
+        prompt: parameters?.prompt,
+        output_format: 'jpg',
+      }
+    }) as FileOutput[];
+
+    // save the content on disk
+    const blob = await output[0].blob()
+    const buffer = await this.blobToBuffer(blob)
+    const fileUrl = saveFile('images', 'jpg', buffer)
+
+    // return an object
+    return {
+      path: `${this.baseUrl}${fileUrl}`,
+      description: parameters?.prompt,
+    }
+
+
+  }
 
   async blobToBuffer(blob: Blob): Promise<Buffer> {
     const arrayBuffer = await blob.arrayBuffer();
