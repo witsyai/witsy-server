@@ -156,10 +156,17 @@ export const userTokensLast24Hours = async (db: Database, userId: number): Promi
 export const userUsageLastDays = async (db: Database, userId: number, days: number = 7): Promise<unknown[]> => {
 
   const after = Date.now() - days * 24 * 60 * 60 * 1000;
-  const result = await db.getDb()?.all('SELECT DATE(ROUND(created_at/1000), "unixepoch") as day, COUNT(DISTINCT id) as queries, COUNT(DISTINCT thread_id) as threads, SUM(input_tokens) as it, SUM(output_tokens) as ot FROM queries WHERE user_id = ? AND created_at > ? GROUP BY day ORDER BY day DESC', [userId, after]);
+  const result = await db.getDb()?.all(`
+    SELECT DATE(ROUND(created_at/1000), "unixepoch") as day, COUNT(DISTINCT id) as queries, COUNT(DISTINCT thread_id) as threads,
+    SUM(input_tokens) as it, SUM(output_tokens) as ot, SUM(image_generation_count) as ig
+    FROM queries
+    WHERE user_id = ? AND created_at > ?
+    GROUP BY day
+    ORDER BY day DESC
+  `, [userId, after]);
 
   const usages = [];
-  for (let i=0; i<days; i++) {
+  for (let i=1; i<=days; i++) {
     const date = new Date(after + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const usage = result?.find(r => r.day === date);
     if (usage) {
@@ -169,7 +176,8 @@ export const userUsageLastDays = async (db: Database, userId: number, days: numb
         threads: usage.threads,
         inputTokens: usage.it,
         outputTokens: usage.ot,
-        totalTokens: usage.it + usage.ot
+        totalTokens: usage.it + usage.ot,
+        imageGenerations: usage.ig
       });
     } else {
       usages.push({
@@ -178,7 +186,8 @@ export const userUsageLastDays = async (db: Database, userId: number, days: numb
         threads: 0,
         inputTokens: 0,
         outputTokens: 0,
-        totalTokens: 0
+        totalTokens: 0,
+        imageGenerations: 0
       });
     }
   }
@@ -191,7 +200,8 @@ export const userUsageLastDays = async (db: Database, userId: number, days: numb
 export const topUsersLastHours = async (db: Database, hours: number, top: number = 10): Promise<unknown[]> => {
   const after = Date.now() - hours * 60 * 60 * 1000;
   const result = await db.getDb()?.all(`
-    SELECT u.id as user_id, u.username, u.subscription_tier as tier, SUM(q.input_tokens) as it, SUM(q.output_tokens) as ot
+    SELECT u.id as user_id, u.username, u.subscription_tier as tier,
+    SUM(q.input_tokens) as it, SUM(q.output_tokens) as ot, SUM(q.image_generation_count) as ig
     FROM queries q
     JOIN users u ON q.user_id = u.id
     WHERE q.created_at > ?
@@ -206,6 +216,7 @@ export const topUsersLastHours = async (db: Database, hours: number, top: number
     inputTokens: r.it,
     outputTokens: r.ot,
     totalTokens: r.it + r.ot,
+    imageGenerations: r.ig,
     dailyAverage: Math.round((r.it + r.ot) / (hours/24))
   })) || [];
 }
@@ -228,7 +239,7 @@ export const totalTokensLastHours = async (db: Database, hours: number = 24): Pr
   
   const result = await db.getDb()?.all(`
     SELECT FLOOR((created_at - ?) / (? / ?)) as instant,
-    SUM(input_tokens) as it, SUM(output_tokens) as ot
+    SUM(input_tokens) as it, SUM(output_tokens) as ot, SUM(image_generation_count) as ig
     FROM queries
     WHERE created_at > ?
     GROUP BY instant
@@ -250,14 +261,16 @@ export const totalTokensLastHours = async (db: Database, hours: number = 24): Pr
         date: date,
         inputTokens: usage.it,
         outputTokens: usage.ot,
-        totalTokens: usage.it + usage.ot
+        totalTokens: usage.it + usage.ot,
+        imageGenerations: usage.ig
       });
     } else {
       usages.push({
         date: date,
         inputTokens: 0,
         outputTokens: 0,
-        totalTokens: 0
+        totalTokens: 0,
+        imageGenerations: 0
       });
     }
   }
