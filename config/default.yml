@@ -47,6 +47,9 @@ models:
     - engine: anthropic
       model: claude-3-5-sonnet-latest
       label: Anthropic Claude 3.5 Sonnet
+    - engine: xai
+      model: grok-beta
+      label: xAI Grok
 
 chat:
   conversation:
