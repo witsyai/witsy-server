@@ -50,7 +50,7 @@ export const canPromptMiddleware = (req: LlmRequest, res: Response, next: NextFu
   req.canPrompt = false;
 
   // need a user and a valud subscription tier
-  if (!req.user || !req.user!.subscriptionTier || req.user!.subscriptionTier === 'free') {
+  if (!req.user || !req.user!.subscriptionTier/* || req.user!.subscriptionTier === 'free'*/) {
     logger.warn(`chat denied: user not found or invalid subscription tier`);
     next();
     return;
@@ -110,6 +110,15 @@ export const rateLimitMiddleware = async (req: LlmRequest, res: Response, next: 
   if (!req.user) {
     res.status(401).json({ error: 'Invalid user' });
     return;
+  }
+
+  // free user is limited to 10 requests total
+  if (req.user.subscriptionTier === 'free') {
+    const totalQueries = await usageController.userTotalQueries(req.db!, req.user.id);
+    if (totalQueries >= req.configuration!.freeQueriesLimit) {
+      res.status(429).json({ error: 'Rate limit exceeded' });
+      return;
+    }
   }
 
   // get applicable rate limits

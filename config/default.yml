@@ -14,6 +14,7 @@ rateLimits:
     unlimited: 0
 
 otherLimits:
+  freeQueries: 10
   imagesPerMonth:
     free: 5
     basic: 100

@@ -140,6 +140,11 @@ export const saveUserQuery = async (
 //   cost_cents INTEGER NOT NULL
 // );
 
+export const userTotalQueries = async (db: Database, userId: number): Promise<number> => {
+  const result = await db.getDb()?.get('SELECT COUNT(*) as count FROM queries WHERE user_id = ?', [userId]);
+  return result.count;
+}
+
 export const userQueriesLastMinutes = async (db: Database, userId: number, minutes: number): Promise<number> => {
   const after = Date.now() - minutes * 60 * 1000;
   const result = await db.getDb()?.get('SELECT COUNT(*) as count FROM queries WHERE user_id = ? AND created_at > ?', [userId, after]);

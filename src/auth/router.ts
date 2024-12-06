@@ -14,6 +14,8 @@ router.post('/register', async (req: AuthedRequest, res) => {
     const user = await createUser(req.db!);
     res.status(200).json({
       userToken: user.userToken,
+      subscriptionTier: user.subscriptionTier,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
     });
   } catch (error) {
     logger.error(`user creation failed: ${error}`);

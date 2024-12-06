@@ -27,6 +27,7 @@ interface ConfiguratioData {
     }
   }
   otherLimits?: {
+    freeQueries: number,
     imagesPerMonth: {
       free: number,
       basic: number,
@@ -108,6 +109,10 @@ export default class Configuration {
 
   get isUnderMaintenance(): boolean {
     return this.data.maintenance === true;
+  }
+
+  get freeQueriesLimit(): number {
+    return this.data.otherLimits!.freeQueries;
   }
 
   get rateLimitRpmFree(): number {
