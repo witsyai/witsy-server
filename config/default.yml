@@ -35,6 +35,9 @@ models:
     - engine: anthropic
       model: claude-3-5-haiku-latest
       label: Anthropic Claude 3.5 Haiku
+    - engine: deepseek
+      model: deepseek-v3
+      label: DeepSeek Chat
   pro:
     - engine: openai
       model: gpt-4o
@@ -51,6 +54,9 @@ models:
     - engine: xai
       model: grok-beta
       label: xAI Grok
+    - engine: deepseek
+      model: deepseek-r1
+      label: DeepSeek Reasoner
 
 chat:
   conversation:
