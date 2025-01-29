@@ -87,7 +87,12 @@ const engines = [
   { id: 'xai', name: 'xAI' },
   { id: 'groq', name: 'Groq' },
   { id: 'cerebras', name: 'Cerebras' },
+  { id: 'deepseek', name: 'DeepSeek' },
 ]
+
+const supportsTools = (modelId: string): boolean => {
+  return modelId !== 'deepseek-reasoner';
+}
 
 export type ApiKeyDict = { [key: string]: string }
 
@@ -155,15 +160,20 @@ export default {
 
     // ignite and add plugins
     const engine = igniteEngine(engineId, chatOpts.llmOpts);
-    engine.addPlugin(new BrowsePlugin());
-    engine.addPlugin(new TavilyPlugin());
-    engine.addPlugin(new PythonPlugin());
-    engine.addPlugin(new YouTubePlugin())
+    if (supportsTools(modelId)) {
 
-    // image plugin
-    const imageModel: EngineModel|undefined = configuration.imageModel;
-    if (chatOpts.canImage && imageModel) {
-      engine.addPlugin(new ImagePlugin(chatOpts.baseUrl, imageModel.engine, imageModel.model));
+      // basic plugins
+      engine.addPlugin(new BrowsePlugin());
+      engine.addPlugin(new TavilyPlugin());
+      engine.addPlugin(new PythonPlugin());
+      engine.addPlugin(new YouTubePlugin())
+
+      // image plugin
+      const imageModel: EngineModel|undefined = configuration.imageModel;
+      if (chatOpts.canImage && imageModel) {
+        engine.addPlugin(new ImagePlugin(chatOpts.baseUrl, imageModel.engine, imageModel.model));
+      }
+
     }
 
     // add the new message to the thread
