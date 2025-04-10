@@ -1,6 +1,6 @@
 
 
-import { LlmRole, LlmChunkTool, Message as MessageBase, Attachment } from 'multi-llm-ts'
+import { LlmRole, LlmChunkTool, Message as MessageBase, Attachment, LlmChunkContent } from 'multi-llm-ts'
 
 export type ToolCallInfo = {
   name: string
@@ -10,11 +10,20 @@ export type ToolCallInfo = {
 
 export default class Message extends MessageBase {
 
+  transient: boolean
   toolCalls: ToolCallInfo[]
 
   constructor(role: LlmRole, content?: string, attachment?: Attachment) {
     super(role, content, attachment)
+    this.transient = (content == null)
     this.toolCalls = []
+  }
+
+  appendText(chunk: LlmChunkContent) {
+    super.appendText(chunk)
+    if (chunk?.done) {
+      this.transient = false
+    }
   }
 
   addToolCall(toolCall: LlmChunkTool) {

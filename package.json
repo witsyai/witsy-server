@@ -30,7 +30,7 @@
     "helmet": "^8.0.0",
     "html-to-text": "^9.0.5",
     "morgan": "^1.10.0",
-    "multi-llm-ts": "^2.10.3",
+    "multi-llm-ts": "^3.2.1",
     "node-apple-receipt-verify": "^1.13.0",
     "openai": "^4.70.2",
     "portfinder": "^1.0.32",
