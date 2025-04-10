@@ -26,7 +26,7 @@ export const createUser = async (db: Database, username?: string, email?: string
       user.email = email;
     }
     if (tier) {
-      user.subscriptionTier = UserTier[tier as keyof typeof UserTier];
+      user.subscriptionTier = Object.entries(UserTier).find(([, value]) => value === tier)?.[1] || UserTier.Free;
     } else {
       user.subscriptionTier = UserTier.Free;
       user.subscriptionExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
