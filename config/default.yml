@@ -24,8 +24,8 @@ otherLimits:
 models:
   basic:
     - engine: openai
-      model: gpt-4o-mini
-      label: OpenAI GPT-4o Mini
+      model: gpt-4.1--mini
+      label: OpenAI GPT-4.1 Mini
     - engine: google
       model: gemini-2.0-flash
       label: Google Gemini 2.0 Flash
@@ -40,8 +40,8 @@ models:
       label: DeepSeek Chat
   pro:
     - engine: openai
-      model: gpt-4o
-      label: OpenAI GPT-4o
+      model: gpt-4.1
+      label: OpenAI GPT-4.1
     - engine: google
       model: gemini-2.5-pro-exp-03-25
       label: Google Gemini 2.5 Pro
@@ -49,11 +49,11 @@ models:
       model: llama-3.3-70b-versatile
       label: Groq Llama 3.3 70B
     - engine: anthropic
-      model: claude-3-7-sonnet-20250219
-      label: Anthropic Claude 3.7 Sonnet
+      model: claude-sonnet-4-20250514
+      label: Anthropic Claude 4 Sonnet
     - engine: xai
-      model: grok-2-1212
-      label: xAI Grok 2
+      model: grok-3
+      label: xAI Grok 3
     - engine: deepseek
       model: deepseek-reasoner
       label: DeepSeek Reasoner
