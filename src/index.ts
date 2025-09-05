@@ -35,7 +35,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(helmet())
 }
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? ['https://www.witsyai.com', 'https://console.witsyai.com'] : '*'
+  origin: process.env.NODE_ENV === 'production' ? ['https://witsy.bonamy.fr', 'https://console.witsy.bonamy.fr'] : '*'
 }))
 
 // bearer token
