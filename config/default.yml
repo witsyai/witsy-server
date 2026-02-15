@@ -24,36 +24,36 @@ otherLimits:
 models:
   basic:
     - engine: openai
-      model: gpt-4.1-mini
-      label: OpenAI GPT-4.1 Mini
+      model: gpt-5-mini
+      label: OpenAI GPT-5 Mini
     - engine: google
-      model: gemini-2.0-flash
-      label: Google Gemini 2.0 Flash
+      model: gemini-flash-latest
+      label: Google Gemini Flash
     - engine: groq
-      model: llama-3.2-90b-text-preview
-      label: Groq Llama 3.2 90B
+      model: meta-llama/llama-4-scout-17b-16e-instruct
+      label: Groq Llama 4 Scout
     - engine: anthropic
-      model: claude-3-5-haiku-latest
-      label: Anthropic Claude 3.5 Haiku
+      model: claude-haiku-4-5-20251001
+      label: Anthropic Claude 4.5 Haiku
     - engine: deepseek
       model: deepseek-chat
       label: DeepSeek Chat
   pro:
     - engine: openai
-      model: gpt-4.1
-      label: OpenAI GPT-4.1
+      model: gpt-5.1
+      label: OpenAI GPT-5.1
     - engine: google
-      model: gemini-2.5-pro-exp-03-25
-      label: Google Gemini 2.5 Pro
+      model: gemini-pro-latest
+      label: Google Gemini Pro
     - engine: groq
-      model: llama-3.3-70b-versatile
-      label: Groq Llama 3.3 70B
+      model: meta-llama/llama-4-maverick-17b-128e-instruct
+      label: Groq Llama 4 Maverick
     - engine: anthropic
-      model: claude-sonnet-4-20250514
-      label: Anthropic Claude 4 Sonnet
+      model: claude-sonnet-4-5-20250929
+      label: Anthropic Claude 4.5 Sonnet
     - engine: xai
-      model: grok-3
-      label: xAI Grok 3
+      model: grok-4-0709
+      label: xAI Grok 4
     - engine: deepseek
       model: deepseek-reasoner
       label: DeepSeek Reasoner
